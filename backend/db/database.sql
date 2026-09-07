@@ -1010,3 +1010,148 @@ VALUES
 -- ================================================================
 -- FIN DEL ESQUEMA
 -- ================================================================
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+CREATE TABLE patrones_compra (
+    pat_id BINARY(16) NOT NULL PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID(), 1)),
+    pat_codigo VARCHAR(30) NOT NULL,
+    pat_nombre VARCHAR(100) NOT NULL,
+    pat_descripcion VARCHAR(255) NULL,
+    estado TINYINT NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by VARCHAR(100) NULL,
+    updated_by VARCHAR(100) NULL,
+    UNIQUE KEY uq_patron_codigo (pat_codigo),
+    UNIQUE KEY uq_patron_nombre (pat_nombre)
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO patrones_compra (pat_id, pat_codigo, pat_nombre, pat_descripcion, estado)
+VALUES
+    (UUID_TO_BIN(UUID(), 1), 'UNICA', 'Compra única',
+        'Cliente con una sola compra histórica; aún sin patrón definido.', 1),
+    (UUID_TO_BIN(UUID(), 1), 'CASUAL', 'Casual',
+        'Compras irregulares, sin intervalo predecible entre ellas (CV alto).', 1),
+    (UUID_TO_BIN(UUID(), 1), 'RECURRENTE', 'Recurrente',
+        'Compras frecuentes con intervalo regular y predecible (CV bajo).', 1),
+    (UUID_TO_BIN(UUID(), 1), 'ESTACIONAL', 'Estacional',
+        'Compras concentradas en los mismos meses del año, repetidas en distintos años.', 1),
+    (UUID_TO_BIN(UUID(), 1), 'DESCONOCIDO', 'Desconocido',
+        'Historial insuficiente para determinar un patrón (menos de 2-3 compras).', 1);
+
+ALTER TABLE cliente_features
+    ADD COLUMN total_compras_historicas INT NOT NULL DEFAULT 0
+        AFTER frecuencia_365d,
+    ADD COLUMN intervalo_promedio_dias DECIMAL(8,2) NULL
+        AFTER total_compras_historicas,
+    ADD COLUMN intervalo_desviacion_dias DECIMAL(8,2) NULL
+        AFTER intervalo_promedio_dias,
+    ADD COLUMN intervalo_cv DECIMAL(6,4) NULL
+        COMMENT 'Coef. de variación = desviación / promedio. Bajo=regular, alto=errático'
+        AFTER intervalo_desviacion_dias,
+    ADD COLUMN pat_id BINARY(16) NULL
+        AFTER intervalo_cv,
+    ADD COLUMN ratio_riesgo_actual DECIMAL(8,4) NULL
+        COMMENT 'dias_desde_ultima_compra / intervalo_promedio_dias del propio cliente'
+        AFTER pat_id,
+    ADD KEY idx_features_patron (emp_id, pat_id),
+    ADD KEY idx_features_ratio_riesgo (emp_id, ratio_riesgo_actual),
+    ADD CONSTRAINT fk_features_patron
+        FOREIGN KEY (pat_id) REFERENCES patrones_compra(pat_id);
+
+
+CREATE TABLE cliente_estacionalidad (
+    ces_id BINARY(16) NOT NULL PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID(), 1)),
+    emp_id BINARY(16) NOT NULL,
+    cli_id BINARY(16) NOT NULL,
+    mes TINYINT NOT NULL,
+    num_compras_historicas INT NOT NULL DEFAULT 0,
+    gasto_total_mes DECIMAL(14,2) NOT NULL DEFAULT 0.00,
+    gasto_promedio_mes DECIMAL(14,2) NOT NULL DEFAULT 0.00,
+    ultima_actualizacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by VARCHAR(100) NULL,
+    updated_by VARCHAR(100) NULL,
+    UNIQUE KEY uq_estacionalidad_cliente_mes (emp_id, cli_id, mes),
+    KEY idx_estacionalidad_cliente (emp_id, cli_id),
+    CONSTRAINT chk_estacionalidad_mes CHECK (mes BETWEEN 1 AND 12),
+    CONSTRAINT fk_estacionalidad_empresa
+        FOREIGN KEY (emp_id) REFERENCES empresa(emp_id),
+    CONSTRAINT fk_estacionalidad_cliente
+        FOREIGN KEY (emp_id, cli_id) REFERENCES cliente(emp_id, cli_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE tipos_direccion_explicacion (
+    tde_id BINARY(16) NOT NULL PRIMARY KEY
+        DEFAULT (UUID_TO_BIN(UUID(), 1)),
+
+    emp_id BINARY(16) NOT NULL,
+    codigo VARCHAR(50) NOT NULL,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion VARCHAR(255) NULL,
+    activo TINYINT(1) NOT NULL DEFAULT 1,
+
+    UNIQUE KEY uq_tipo_direccion_empresa_id (
+        emp_id,
+        tde_id
+    ),
+
+    UNIQUE KEY uq_tipo_direccion_codigo (
+        emp_id,
+        codigo
+    ),
+
+    CONSTRAINT fk_tipo_direccion_empresa
+        FOREIGN KEY (emp_id)
+        REFERENCES empresa(emp_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE prediccion_explicaciones (
+    pex_id BINARY(16) NOT NULL PRIMARY KEY
+        DEFAULT (UUID_TO_BIN(UUID(), 1)),
+
+    emp_id BINARY(16) NOT NULL,
+    pdc_id BINARY(16) NOT NULL,
+    tde_id BINARY(16) NOT NULL,
+
+    feature_nombre VARCHAR(100) NOT NULL,
+    feature_valor VARCHAR(150) NULL,
+    impacto DECIMAL(10,6) NOT NULL,
+    orden_importancia INT NOT NULL DEFAULT 1,
+
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    created_by VARCHAR(100) NULL,
+    updated_by VARCHAR(100) NULL,
+
+    UNIQUE KEY uq_explicacion_pdc_feature (
+        emp_id,
+        pdc_id,
+        feature_nombre
+    ),
+
+    KEY idx_explicacion_prediccion (
+        emp_id,
+        pdc_id,
+        orden_importancia
+    ),
+
+    CONSTRAINT fk_explicacion_empresa
+        FOREIGN KEY (emp_id)
+        REFERENCES empresa(emp_id),
+
+    CONSTRAINT fk_explicacion_prediccion
+        FOREIGN KEY (emp_id, pdc_id)
+        REFERENCES predicciones(emp_id, pdc_id),
+
+    CONSTRAINT fk_explicacion_tipo_direccion
+        FOREIGN KEY (emp_id, tde_id)
+        REFERENCES tipos_direccion_explicacion(emp_id, tde_id)
+
+) ENGINE=InnoDB;
+
+SET FOREIGN_KEY_CHECKS = 1;
