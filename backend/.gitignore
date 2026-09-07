@@ -7,3 +7,4 @@ ml_artifacts/*.joblib
 htmlcov/
 .coverage
 *.egg-info/
+# *db/
