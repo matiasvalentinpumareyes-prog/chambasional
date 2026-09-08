@@ -4,7 +4,7 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 
 from app.core.config import settings
-from app.db.session import Base
+from app.models.base import Base  # 43 tablas BD real
 import app.models  # noqa: F401  -- registra todos los modelos en Base.metadata
 
 config = context.config
