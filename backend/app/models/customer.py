@@ -39,4 +39,18 @@ class CustomerValue(str, Enum):
     medium = "medium"
     high = "high"
 
+# Alias legacy para código viejo que usa business_id/id/first_name etc.
+try:
+    Customer.business_id = property(lambda self: self.emp_id)
+    Customer.id = property(lambda self: self.cli_id)
+    Customer.first_name = property(lambda self: (self.cli_nombre_razon_social or "").split(" ")[0] if self.cli_nombre_razon_social else "")
+    Customer.last_name = property(lambda self: " ".join((self.cli_nombre_razon_social or "").split(" ")[1:]) if self.cli_nombre_razon_social else "")
+    Customer.email = property(lambda self: self.cli_email)
+    Customer.phone = property(lambda self: self.cli_celular)
+    Customer.birth_date = property(lambda self: self.cli_birthday)
+    Customer.city = property(lambda self: None)
+    Customer.status = property(lambda self: CustomerStatus.active if self.estado == 1 else CustomerStatus.inactive)
+except Exception:
+    pass
+
 __all__ = ["Customer", "Channel", "CustomerStatus", "ActivityStatus", "CustomerSegment", "CustomerValue"]

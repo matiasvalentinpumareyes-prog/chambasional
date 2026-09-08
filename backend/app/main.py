@@ -4,7 +4,8 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import auth, campaigns, customers, dashboard, health, imports, models, predictions, products, sales, settings as settings_router
+from app.api import auth, campaigns, dashboard, health, imports, models, predictions, products, sales, settings as settings_router
+from app.api import clientes, stock, ventas
 from app.core.config import settings
 from app.core.errors import AppError
 
@@ -29,7 +30,6 @@ async def app_error_handler(request: Request, exc: AppError):
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
-    # Nunca se expone el stack trace al cliente en producción (sección 52).
     logger.exception("Unhandled exception on %s %s", request.method, request.url)
     return JSONResponse(
         status_code=500,
@@ -39,9 +39,13 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 
 app.include_router(health.router, prefix=settings.API_V1_PREFIX)
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
-app.include_router(customers.router, prefix=settings.API_V1_PREFIX)
+# Clientes: nuevo /clientes + legacy /customers (via clientes.router_legacy y via customers shim)
+app.include_router(clientes.router, prefix=settings.API_V1_PREFIX)
+app.include_router(clientes.router_legacy, prefix=settings.API_V1_PREFIX)
 app.include_router(products.router, prefix=settings.API_V1_PREFIX)
-app.include_router(sales.router, prefix=settings.API_V1_PREFIX)
+app.include_router(stock.router, prefix=settings.API_V1_PREFIX)
+app.include_router(ventas.router, prefix=settings.API_V1_PREFIX)
+app.include_router(ventas.router_legacy, prefix=settings.API_V1_PREFIX)
 app.include_router(dashboard.router, prefix=settings.API_V1_PREFIX)
 app.include_router(predictions.router, prefix=settings.API_V1_PREFIX)
 app.include_router(campaigns.router, prefix=settings.API_V1_PREFIX)

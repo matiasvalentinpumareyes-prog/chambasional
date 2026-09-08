@@ -23,7 +23,7 @@ validación real antes de escribir cualquier dato.
 app/
 ├── api/            Routers HTTP (una responsabilidad por archivo)
 ├── core/           Config, seguridad (JWT/hash), errores, dependencias
-├── models/         Modelos SQLAlchemy (19 tablas ORM vigentes; 43 tablas en db/database_postgres.sql para db_regresape)
+├── models/         Modelo (43 tablas — db_regresape, ver db/database_postgres.sql)
 ├── repositories/   Acceso a datos con aislamiento multi-tenant OBLIGATORIO
 ├── services/       Lógica de negocio: RFM, churn, recomendaciones, estrategias, campañas, importación, dashboard
 ├── ml/             Feature engineering y pipeline de entrenamiento (scikit-learn)
@@ -57,14 +57,13 @@ cp .env.example .env
 createdb db_regresape
 # o: psql -U postgres -c "CREATE DATABASE db_regresape;"
 
-# Aplicar migraciones (19 tablas ORM)
+# Aplicar migraciones (43 tablas — db_regresape)
 alembic upgrade head
-# Verificar: psql "$DATABASE_URL" -c "\dt"
+# Verificar: psql "$DATABASE_URL" -c "\dt"  # debe mostrar 43 tablas
 
 # Cargar datos de demostración (1200 clientes, 37 productos, ~11,500 ventas)
 python seed_database.py
-# Nota: el SQL completo histórico (43 tablas) está en db/database_postgres.sql
-# Ver backend/DATABASE.md y README.md raíz para el flujo psql -f con db_regresape
+# Esquema fuente: db/database_postgres.sql (43 tablas, ver backend/DATABASE.md)
 ```
 
 Esto crea un usuario administrador de prueba:

@@ -65,6 +65,6 @@ Un commit por fase completada, mensaje `feat: fase X - ...`, sin `git push`.
 - Fase 1: completada (2026-09-18) — commit 5a3febf — 43 tablas verificadas
 - Fase 2: completada (2026-09-18) — commit 566bfa0 — Base unificada, alembic 0001_bd_real_43_tablas
 - Fase 3: completada (2026-09-18) — commit ebb33ba — schemas 1:1 BD sin ORM (stock con stk_cantidad/min/max)
-- Fase 4: en progreso — repos con emp_id + stock_repo completo
-- Fase 5: pendiente
-- Fase 6: pendiente
+- Fase 4: completada (2026-09-18) — commit e11887b — repos emp_id + stock_repo + deps usu_id
+- Fase 5: completada (2026-09-18) — apis auth/productos/stock/ventas/clientes con nombres exactos BD (stock completo)
+- Fase 6: en progreso — verificación

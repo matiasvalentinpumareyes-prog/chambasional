@@ -9,4 +9,21 @@ class ProductStatus(str, Enum):
     active = "1"
     inactive = "0"
 
+try:
+    Product.business_id = property(lambda self: self.emp_id)
+    Product.id = property(lambda self: self.prd_id)
+    Product.sku = property(lambda self: self.prd_sku)
+    Product.name = property(lambda self: self.prd_nombre)
+    Product.description = property(lambda self: self.prd_descripcion)
+    Product.category_id = property(lambda self: self.cat_id)
+    Product.price = property(lambda self: self.prd_precios if hasattr(self, 'prd_precios') else 0)
+    Product.cost = property(lambda self: getattr(self, 'prd_precios_costo', None))
+    Product.stock = property(lambda self: 0)
+    Product.status = property(lambda self: ProductStatus.active if self.estado == 1 else ProductStatus.inactive)
+    Category.business_id = property(lambda self: self.emp_id)
+    Category.id = property(lambda self: self.cat_id)
+    Category.name = property(lambda self: self.cat_nombre)
+except Exception:
+    pass
+
 __all__ = ["Product", "Category", "ProductStatus", "ProductoMarca", "ProductoPrecio", "ProductoStock"]
