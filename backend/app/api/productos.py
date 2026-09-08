@@ -25,13 +25,19 @@ def _get_or_create_categoria(db: Session, emp_id: str, cat_nombre: str) -> Categ
 
 
 def _to_out(db: Session, producto: Producto) -> ProductoOut:
-    # Resolver categoria/marca nombres
+    # Resolver categoria/subcategoria/marca nombres
     cat_nombre = ""
+    subcat_nombre = None
     marca_nombre = None
     if producto.cat_id:
         cat = db.scalar(select(Categoria).where(Categoria.emp_id == producto.emp_id, Categoria.cat_id == producto.cat_id))
         if cat:
             cat_nombre = cat.cat_nombre
+    if producto.subcat_id:
+        from app.models.subcategoria import Subcategoria
+        sub = db.scalar(select(Subcategoria).where(Subcategoria.emp_id == producto.emp_id, Subcategoria.subcat_id == producto.subcat_id))
+        if sub:
+            subcat_nombre = sub.subcat_nombre
     if producto.prd_marca_id:
         from app.models.producto import ProductoMarca
         marca = db.scalar(select(ProductoMarca).where(ProductoMarca.emp_id == producto.emp_id, ProductoMarca.prd_marca_id == producto.prd_marca_id))
@@ -53,6 +59,7 @@ def _to_out(db: Session, producto: Producto) -> ProductoOut:
     return ProductoOut(
         emp_id=producto.emp_id,
         cat_id=producto.cat_id,
+        subcat_id=producto.subcat_id,
         prd_marca_id=producto.prd_marca_id,
         prd_sku=producto.prd_sku,
         prd_codbarra=producto.prd_codbarra,
@@ -63,6 +70,7 @@ def _to_out(db: Session, producto: Producto) -> ProductoOut:
         created_at=producto.created_at,
         updated_at=producto.updated_at,
         categoria_nombre=cat_nombre,
+        subcategoria_nombre=subcat_nombre,
         marca_nombre=marca_nombre,
         precio_vigente=precio_vigente,
         costo_vigente=costo_vigente,
@@ -74,12 +82,14 @@ def _to_out(db: Session, producto: Producto) -> ProductoOut:
 def list_productos(
     page_params: PageParams = Depends(),
     search: str | None = None,
+    cat_id: str | None = None,
+    subcat_id: str | None = None,
     estado: int | None = None,
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(get_current_user),
 ):
     repo = ProductoRepository(db)
-    items, total = repo.list(usuario.emp_id, page=page_params.page, page_size=page_params.page_size, search=search, estado=estado)
+    items, total = repo.list(usuario.emp_id, page=page_params.page, page_size=page_params.page_size, search=search, cat_id=cat_id, subcat_id=subcat_id, estado=estado)
     return Paginated(items=[_to_out(db, p) for p in items], page=page_params.page, page_size=page_params.page_size, total=total)
 
 
@@ -106,17 +116,28 @@ def create_producto(payload: ProductoCreate, db: Session = Depends(get_db), usua
     if payload.prd_codbarra and repo.get_by_codbarra(usuario.emp_id, payload.prd_codbarra):
         raise ConflictError("CODBARRA_ALREADY_EXISTS", "Ya existe un producto con este código de barras.")
 
-    # Resolver categoria/marca si vienen como IDs o nombres: payload.cat_id puede ser nombre
+    # Resolver categoria/subcategoria si vienen como nombres
     cat_id = payload.cat_id
-    # Si payload contiene cat_nombre vía prd? En ProductoCreate cat_id es UUID, pero si frontend envía nombre, creamos
-    # Para compat, si cat_id no es UUID válido y parece nombre, crear
+    subcat_id = payload.subcat_id
     if cat_id and len(cat_id) < 36:
         cat = _get_or_create_categoria(db, usuario.emp_id, cat_id)
         cat_id = cat.cat_id
+    # Validar subcat requiere cat
+    if subcat_id and not cat_id:
+        raise ConflictError("SUBCAT_REQUIERE_CAT", "subcat_id requiere cat_id (CHECK chk_producto_subcat_requiere_cat)")
+    if subcat_id and len(subcat_id) < 36:
+        # subcat_nombre viene en lugar de UUID
+        if not cat_id:
+            raise ConflictError("SUBCAT_REQUIERE_CAT", "Para crear subcategoría por nombre se requiere cat_id")
+        from app.repositories.producto_repo import ProductoRepository as PR
+        repo_tmp = PR(db)
+        sub = repo_tmp.get_or_create_subcategoria(usuario.emp_id, cat_id, subcat_id)
+        subcat_id = sub.subcat_id
 
     producto = Producto(
         emp_id=usuario.emp_id,
         cat_id=cat_id,
+        subcat_id=subcat_id,
         prd_marca_id=payload.prd_marca_id,
         prd_sku=payload.prd_sku,
         prd_codbarra=payload.prd_codbarra,
@@ -166,10 +187,20 @@ def update_producto(prd_id: str, payload: ProductoUpdate, db: Session = Depends(
         if existing and existing.prd_id != prd_id:
             raise ConflictError("SKU_ALREADY_EXISTS", "SKU ya existe en otro producto.")
 
-    # Manejar categoria nombre
+    # Manejar categoria/subcategoria nombre
     if "cat_id" in patch and patch["cat_id"] and len(patch["cat_id"]) < 36:
         cat = _get_or_create_categoria(db, usuario.emp_id, patch["cat_id"])
         patch["cat_id"] = cat.cat_id
+    if "subcat_id" in patch and patch["subcat_id"]:
+        if "cat_id" not in patch and not producto.cat_id:
+            raise ConflictError("SUBCAT_REQUIERE_CAT", "subcat_id requiere cat_id")
+        # Si subcat es nombre, crear
+        if len(patch["subcat_id"]) < 36:
+            check_cat = patch.get("cat_id", producto.cat_id)
+            from app.repositories.producto_repo import ProductoRepository as PR
+            repo_tmp = PR(db)
+            sub = repo_tmp.get_or_create_subcategoria(usuario.emp_id, check_cat, patch["subcat_id"])
+            patch["subcat_id"] = sub.subcat_id
 
     updated = repo.update(producto, patch)
     return _to_out(db, updated)
