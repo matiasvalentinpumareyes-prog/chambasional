@@ -61,10 +61,10 @@
 Un commit por fase completada, mensaje `feat: fase X - ...`, sin `git push`.
 
 ## Progreso
-- Fase 0: pendiente
-- Fase 1: pendiente
-- Fase 2: pendiente
-- Fase 3: pendiente
+- Fase 0: completada (2026-09-18) — commit 2005912
+- Fase 1: completada (2026-09-18) — commit 5a3febf — 43 tablas verificadas
+- Fase 2: completada (2026-09-18) — commit 566bfa0 — Base unificada, alembic 0001_bd_real_43_tablas
+- Fase 3: en progreso — schemas 1:1 BD sin ORM (stock con stk_cantidad/min/max)
 - Fase 4: pendiente
 - Fase 5: pendiente
 - Fase 6: pendiente
