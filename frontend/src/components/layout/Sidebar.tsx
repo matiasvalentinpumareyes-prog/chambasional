@@ -3,7 +3,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Users, AlertTriangle, Sparkles, Package, Receipt, Megaphone,
   BarChart3, Cpu, UploadCloud, Settings, Sprout, Warehouse, Layers, ListTree,
-  ChevronDown, ChevronRight, PanelLeftClose, PanelLeftOpen,
+  ChevronDown, ChevronRight, PanelLeftClose, PanelLeftOpen, ShieldCheck, UserCircle,
 } from "lucide-react";
 import { classNames } from "@/lib/format";
 
@@ -28,13 +28,19 @@ const PRODUCTO_CHILDREN: NavItem[] = [
   { to: "/subcategorias", label: "Subcategorías", icon: ListTree },
 ];
 
+const CONFIG_CHILDREN: NavItem[] = [
+  { to: "/configuracion/empresa", label: "Empresa", icon: Settings },
+  { to: "/configuracion/usuarios", label: "Usuarios", icon: Users },
+  { to: "/configuracion/roles", label: "Roles", icon: ShieldCheck },
+  { to: "/configuracion/perfil", label: "Mi perfil", icon: UserCircle },
+];
+
 const BOTTOM_ITEMS: NavItem[] = [
   { to: "/ventas", label: "Ventas", icon: Receipt },
   { to: "/campanas", label: "Campañas", icon: Megaphone },
   { to: "/analitica", label: "Analítica", icon: BarChart3 },
   { to: "/modelos", label: "Modelos", icon: Cpu },
   { to: "/importaciones", label: "Importaciones", icon: UploadCloud },
-  { to: "/configuracion", label: "Configuración", icon: Settings },
 ];
 
 function NavItemLink({ to, label, icon: Icon, end, collapsed }: NavItem & { collapsed: boolean }) {
@@ -65,6 +71,8 @@ export function Sidebar({ collapsed: controlledCollapsed, onToggle }: { collapse
   const location = useLocation();
   const isProductoActive = PRODUCTO_CHILDREN.some((c) => location.pathname === c.to || location.pathname.startsWith(c.to + "/"));
   const [productoOpen, setProductoOpen] = useState(isProductoActive);
+  const isConfigActive = CONFIG_CHILDREN.some((c) => location.pathname === c.to || location.pathname.startsWith(c.to + "/")) || location.pathname === "/configuracion";
+  const [configOpen, setConfigOpen] = useState(isConfigActive);
 
   // Auto-open dropdown when navigating to producto child
   if (isProductoActive && !productoOpen && !collapsed) {
@@ -137,6 +145,55 @@ export function Sidebar({ collapsed: controlledCollapsed, onToggle }: { collapse
         {BOTTOM_ITEMS.map((item) => (
           <NavItemLink key={item.to} {...item} collapsed={collapsed} />
         ))}
+
+        {/* Configuración dropdown — dentro lleva Empresa/Usuarios/Roles/Mi perfil */}
+        {!collapsed ? (
+          <div className="pt-1">
+            <button
+              onClick={() => setConfigOpen((v) => !v)}
+              className={classNames(
+                "w-full flex items-center gap-2.5 px-3 py-2 rounded text-[13.5px] font-medium transition-colors",
+                isConfigActive ? "bg-brand-light text-brand-dark" : "text-ink/75 hover:bg-ink/5"
+              )}
+            >
+              <Settings size={16} strokeWidth={2} className="shrink-0" />
+              <span className="flex-1 text-left truncate">Configuración</span>
+              {configOpen ? <ChevronDown size={14} className="shrink-0" /> : <ChevronRight size={14} className="shrink-0" />}
+            </button>
+            {configOpen && (
+              <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5">
+                <NavLink
+                  to="/configuracion"
+                  end
+                  className={({ isActive }) =>
+                    classNames(
+                      "flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] font-medium transition-colors",
+                      isActive ? "bg-brand-light text-brand-dark" : "text-ink/70 hover:bg-ink/5"
+                    )
+                  }
+                >
+                  <Settings size={14} strokeWidth={2} className="shrink-0" />
+                  <span className="truncate">General</span>
+                </NavLink>
+                {CONFIG_CHILDREN.map((child) => (
+                  <NavLink
+                    key={child.to}
+                    to={child.to}
+                    className={({ isActive }) =>
+                      classNames(
+                        "flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] font-medium transition-colors",
+                        isActive ? "bg-brand-light text-brand-dark" : "text-ink/70 hover:bg-ink/5"
+                      )
+                    }
+                  >
+                    <child.icon size={14} strokeWidth={2} className="shrink-0" />
+                    <span className="truncate">{child.label}</span>
+                  </NavLink>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : null}
       </nav>
 
       {!collapsed && (

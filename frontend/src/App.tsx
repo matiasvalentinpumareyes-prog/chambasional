@@ -36,6 +36,10 @@ export default function App() {
           <Route path="/modelos" element={<ProtectedRoute><ModelsPage /></ProtectedRoute>} />
           <Route path="/importaciones" element={<ProtectedRoute><ImportsPage /></ProtectedRoute>} />
           <Route path="/configuracion" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+          <Route path="/configuracion/empresa" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+          <Route path="/configuracion/usuarios" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+          <Route path="/configuracion/roles" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+          <Route path="/configuracion/perfil" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
