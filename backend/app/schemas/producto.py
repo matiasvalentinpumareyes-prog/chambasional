@@ -88,11 +88,13 @@ class ProductoMarcaOut(ProductoMarcaBase):
 class ProductoBase(BaseModel):
     emp_id: str = Field(..., description="Tenant empresa.emp_id")
     cat_id: str | None = Field(None, description="FK (emp_id, cat_id) -> categorias")
+    subcat_id: str | None = Field(None, description="FK (emp_id, cat_id, subcat_id) -> subcategorias (chk_producto_subcat_requiere_cat: subcat_id NULL OR cat_id NOT NULL)")
     prd_marca_id: str | None = Field(None, description="FK (emp_id, prd_marca_id) -> producto_marca")
     prd_sku: str | None = Field(None, max_length=100, description="SKU único por empresa (uq_producto_emp_sku)")
     prd_codbarra: str | None = Field(None, max_length=100, description="Código barras (uq_producto_emp_codbarra)")
     prd_nombre: str = Field(..., min_length=1, max_length=150, description="Nombre comercial")
     prd_descripcion: str | None = Field(None, description="TEXT")
+
     model_config = {"from_attributes": True}
 
 
@@ -103,12 +105,14 @@ class ProductoCreate(ProductoBase):
 
 class ProductoUpdate(BaseModel):
     cat_id: str | None = None
+    subcat_id: str | None = None
     prd_marca_id: str | None = None
     prd_sku: str | None = Field(None, max_length=100)
     prd_codbarra: str | None = Field(None, max_length=100)
     prd_nombre: str | None = Field(None, min_length=1, max_length=150)
     prd_descripcion: str | None = None
     estado: int | None = None
+
     model_config = {"from_attributes": True}
 
 
@@ -118,6 +122,7 @@ class ProductoOut(ProductoBase):
     created_at: datetime | None = None
     updated_at: datetime | None = None
     categoria_nombre: str | None = None
+    subcategoria_nombre: str | None = Field(None, description="subcategorias.subcat_nombre resuelto")
     marca_nombre: str | None = None
     precio_vigente: Decimal | None = Field(None, description="Precio vigente de producto_precios.fecha_fin IS NULL")
     costo_vigente: Decimal | None = None

@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.models.producto import Categoria, Producto, ProductoMarca, ProductoPrecio
 from app.models.stock import ProductoStock
+from app.models.subcategoria import Subcategoria
 
 
 class ProductoRepository:
@@ -29,6 +30,21 @@ class ProductoRepository:
     def list_categorias(self, emp_id: str) -> list[Categoria]:
         return list(self.db.scalars(select(Categoria).where(Categoria.emp_id == emp_id)))
 
+    def list_subcategorias(self, emp_id: str, cat_id: str | None = None) -> list[Subcategoria]:
+        stmt = select(Subcategoria).where(Subcategoria.emp_id == emp_id)
+        if cat_id:
+            stmt = stmt.where(Subcategoria.cat_id == cat_id)
+        return list(self.db.scalars(stmt))
+
+    def get_or_create_subcategoria(self, emp_id: str, cat_id: str, subcat_nombre: str) -> Subcategoria:
+        sub = self.db.scalar(select(Subcategoria).where(Subcategoria.emp_id == emp_id, Subcategoria.cat_id == cat_id, Subcategoria.subcat_nombre == subcat_nombre))
+        if sub:
+            return sub
+        sub = Subcategoria(emp_id=emp_id, cat_id=cat_id, subcat_nombre=subcat_nombre)
+        self.db.add(sub)
+        self.db.flush()
+        return sub
+
     # ---- Marcas ----
     def get_or_create_marca(self, emp_id: str, prd_marca_nombre: str) -> ProductoMarca:
         marca = self.db.scalar(select(ProductoMarca).where(ProductoMarca.emp_id == emp_id, ProductoMarca.prd_marca_nombre == prd_marca_nombre))
@@ -48,6 +64,7 @@ class ProductoRepository:
         page_size: int,
         search: str | None = None,
         cat_id: str | None = None,
+        subcat_id: str | None = None,
         prd_marca_id: str | None = None,
         estado: int | None = None,
     ) -> tuple[list[Producto], int]:
@@ -57,6 +74,8 @@ class ProductoRepository:
             stmt = stmt.where(func.lower(Producto.prd_nombre).like(like) | func.lower(Producto.prd_sku).like(like))
         if cat_id:
             stmt = stmt.where(Producto.cat_id == cat_id)
+        if subcat_id:
+            stmt = stmt.where(Producto.subcat_id == subcat_id)
         if prd_marca_id:
             stmt = stmt.where(Producto.prd_marca_id == prd_marca_id)
         if estado is not None:

@@ -1,5 +1,5 @@
 """
-Modelos BD real db_regresape — 43 tablas.
+Modelos BD real db_regresape — 44 tablas (incluye subcategorias).
 Nombres exactos a database_postgres.sql (español/inglés según BD).
 """
 
@@ -10,6 +10,7 @@ from app.models.catalogs import (
 )
 from app.models.empresa import Empresa, UsuarioPersonal, Usuario
 from app.models.producto import Categoria, ProductoMarca, Producto, ProductoPrecio
+from app.models.subcategoria import Subcategoria
 from app.models.stock import ProductoStock
 from app.models.cliente import (
     Cliente, ClienteConsentimiento, ClienteSegmento, ClienteSegmentoHistorial,
@@ -28,8 +29,9 @@ __all__ = [
     "CanalMarketing", "Segmento", "Rol", "AuditoriaEntidad", "AuditoriaAccion", "PatronCompra",
     # empresa
     "Empresa", "UsuarioPersonal", "Usuario",
-    # comercio
-    "Categoria", "ProductoMarca", "Producto", "ProductoPrecio", "ProductoStock",
+    # producto
+    "Categoria", "ProductoMarca", "Producto", "ProductoPrecio",
+    "Subcategoria", "ProductoStock",
     # cliente
     "Cliente", "ClienteConsentimiento", "ClienteSegmento", "ClienteSegmentoHistorial",
     "ClienteFeatures", "ClienteEstacionalidad", "TipoDireccionExplicacion", "PrediccionExplicacion",
