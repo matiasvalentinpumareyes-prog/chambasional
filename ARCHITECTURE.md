@@ -16,7 +16,8 @@ API REST (FastAPI)
    └── jobs/         recálculo periódico fuera del ciclo HTTP
    |
    v
-PostgreSQL (19 tablas, sección 32)
+PostgreSQL 16 — db_regresape (19 tablas ORM vigentes, 43 tablas en db/database_postgres.sql histórico)
+  DATABASE_URL: postgresql+psycopg2://postgres:postgres@postgres:5432/db_regresape (Docker) / @localhost:5432/db_regresape (local)
 ```
 
 Se eligió un **modular monolith** (sección 77 del brief), no
@@ -32,7 +33,7 @@ justifica, sin reescribir la lógica de negocio.
 | Decisión | Motivo |
 |---|---|
 | FastAPI sobre Flask/Django | Validación automática con Pydantic, documentación OpenAPI gratuita, y soporte nativo de tipado que reduce errores en un proyecto con muchos modelos de datos. |
-| PostgreSQL sobre MySQL | Soporte robusto de `NUMERIC` para dinero, JSON nativo (usado en `reasons`, `features`, `conditions` de las reglas), y es el estándar de facto para este tipo de proyecto. |
+| PostgreSQL 16 (`postgres:16-alpine`, `db_regresape`) sobre MySQL | `NUMERIC` para dinero, `JSON` (`reasons`, `features`, `conditions`), `uuid-ossp` + `uuid_generate_v1mc()` (`db/database_postgres.sql:6`), 43 tablas histórico / 19 ORM vigente |
 | SQLAlchemy 2.0 + Alembic | ORM maduro con tipado moderno (`Mapped[]`), migraciones versionadas obligatorias en vez de `create_all()` en producción. |
 | React + TypeScript + Vite | Stack más común y con mejor soporte de herramientas para SPAs de dashboard con muchos formularios y gráficos. |
 | scikit-learn sobre un framework de deep learning | El problema (clasificación tabular con pocas variables) no se beneficia de redes neuronales; modelos clásicos son más explicables, más rápidos de entrenar con pocos datos, y más fáciles de auditar (requisito central del proyecto). |
@@ -69,7 +70,7 @@ modificarse.
 |---|---|
 | Frontend | `tsc -b --noEmit` (0 errores) + `vite build` (build de producción real) |
 | Backend | Levantado contra PostgreSQL 16 real, flujo completo probado con curl (registro → venta → RFM/churn → dashboard) |
-| Migraciones | `alembic upgrade head` aplicado y confirmado con `\dt` en psql |
+| Migraciones | `alembic upgrade head` (19 tablas ORM en `db_regresape`) aplicado y confirmado con `psql "$DATABASE_URL" -c "\dt"`; esquema SQL completo 43 tablas en `db/database_postgres.sql` vía `psql ... -f` |
 | Modelo ML | Entrenado con datos sintéticos reales, 4 bugs encontrados y corregidos (ver `backend/ML.md`) |
-| Tests | 36/36 pasando contra una base de datos Postgres de test real (no mocks de base de datos) |
+| Tests | 36/36 pasando contra `db_regresape_test` (Postgres real, no mocks) — `tests/conftest.py:4` |
 | Docker | `docker-compose.yml` validado sintácticamente; **no se pudo ejecutar `docker compose up --build` real** por no contar con un daemon Docker en este entorno de desarrollo — pendiente de verificar en una máquina con Docker antes de considerar esta fase cerrada. |

@@ -1,5 +1,5 @@
 -- ================================================================
--- DB_RegresaPE - Esquema PostgreSQL
+-- db_regresape - Esquema PostgreSQL
 -- Migración desde MySQL conservando la estructura, relaciones y nombres
 -- ================================================================
 
@@ -968,7 +968,7 @@ pat_id UUID NOT NULL PRIMARY KEY DEFAULT (uuid_generate_v1mc()),
 INSERT INTO patrones_compra (pat_id, pat_codigo, pat_nombre, pat_descripcion, estado)
 VALUES
     (uuid_generate_v1mc(), 'UNICA', 'Compra única',
-        'Cliente con una sola compra histórica ON CONFLICT DO NOTHING; aún sin patrón definido.', 1),
+        'Cliente con una sola compra histórica aún sin patrón definido.', 1),
     (uuid_generate_v1mc(), 'CASUAL', 'Casual',
         'Compras irregulares, sin intervalo predecible entre ellas (CV alto).', 1),
     (uuid_generate_v1mc(), 'RECURRENTE', 'Recurrente',
@@ -976,7 +976,8 @@ VALUES
     (uuid_generate_v1mc(), 'ESTACIONAL', 'Estacional',
         'Compras concentradas en los mismos meses del año, repetidas en distintos años.', 1),
     (uuid_generate_v1mc(), 'DESCONOCIDO', 'Desconocido',
-        'Historial insuficiente para determinar un patrón (menos de 2-3 compras).', 1);
+        'Historial insuficiente para determinar un patrón (menos de 2-3 compras).', 1)
+ON CONFLICT DO NOTHING;
 
 ALTER TABLE cliente_features
     ADD COLUMN total_compras_historicas INT NOT NULL DEFAULT 0,

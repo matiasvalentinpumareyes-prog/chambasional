@@ -23,8 +23,7 @@ validación real antes de escribir cualquier dato.
 app/
 ├── api/            Routers HTTP (una responsabilidad por archivo)
 ├── core/           Config, seguridad (JWT/hash), errores, dependencias
-├── models/         Modelos SQLAlchemy (19 tablas del brief)
-├── schemas/        Contratos Pydantic (idénticos a los tipos del frontend)
+├── models/         Modelos SQLAlchemy (19 tablas ORM vigentes; 43 tablas en db/database_postgres.sql para db_regresape)
 ├── repositories/   Acceso a datos con aislamiento multi-tenant OBLIGATORIO
 ├── services/       Lógica de negocio: RFM, churn, recomendaciones, estrategias, campañas, importación, dashboard
 ├── ml/             Feature engineering y pipeline de entrenamiento (scikit-learn)
@@ -39,7 +38,7 @@ contienen lógica de negocio (eso vive en `services/`).
 ## 3. Requisitos
 
 - Python 3.12+
-- PostgreSQL 14+
+- PostgreSQL 16+ (`postgres:16-alpine` en `docker-compose.yml:5`, requiere `uuid-ossp` para `uuid_generate_v1mc()` — ver `db/database_postgres.sql:6`)
 - (Opcional) Docker y Docker Compose
 
 ## 4. Instalación local (sin Docker)
@@ -51,22 +50,28 @@ source venv/bin/activate
 pip install -r requirements.txt
 
 cp .env.example .env
+# .env trae DATABASE_URL=postgresql+psycopg2://postgres:postgres@localhost:5432/db_regresape
+# En Docker, docker-compose.yml hace override a @postgres:5432/db_regresape
 
 # Crear la base de datos
-createdb DB_RegresaPE
+createdb db_regresape
+# o: psql -U postgres -c "CREATE DATABASE db_regresape;"
 
-# Aplicar migraciones
+# Aplicar migraciones (19 tablas ORM)
 alembic upgrade head
+# Verificar: psql "$DATABASE_URL" -c "\dt"
 
 # Cargar datos de demostración (1200 clientes, 37 productos, ~11,500 ventas)
 python seed_database.py
+# Nota: el SQL completo histórico (43 tablas) está en db/database_postgres.sql
+# Ver backend/DATABASE.md y README.md raíz para el flujo psql -f con db_regresape
 ```
 
 Esto crea un usuario administrador de prueba:
 
 ```
 email: admin@demo.com
-password: 12345
+password: Demo12345
 ```
 
 ## 5. Ejecutar el servidor
@@ -81,8 +86,8 @@ Health checks: `GET /api/health` y `GET /api/ready`
 ## 6. Ejecutar los tests
 
 ```bash
-createdb marketing_predictivo_test
-pytest tests/ -v
+createdb db_regresape_test
+pytest tests/ -v  # tests/conftest.py:4 usa db_regresape_test
 ```
 
 35 tests (unitarios + integración), incluyendo un bloque específico de

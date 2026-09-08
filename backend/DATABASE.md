@@ -1,6 +1,8 @@
-# DATABASE.md — DB_RegresaPE (PostgreSQL)
+# DATABASE.md — db_regresape (PostgreSQL)
 
-Fuente de verdad: `db/database_postgres.sql:1` — PostgreSQL 16. 43 tablas, sin ORM ni Alembic. El backend se conecta vía `DATABASE_URL` y ejecuta este SQL directamente.
+> **DB real:** `db_regresape` (PostgreSQL 16, `postgres:16-alpine` en `docker-compose.yml:5`). Ver `README.md` raíz para reconciliación 43 tablas SQL (histórico) vs 19 tablas ORM vigentes.
+
+Fuente de verdad histórica: `db/database_postgres.sql:1` — PostgreSQL 16. 43 tablas (esquema completo heredado). El flujo vigente de la API usa Alembic (19 tablas en `app/models/`); ambos apuntan a `db_regresape` vía `DATABASE_URL`.
 
 ## Requisitos
 

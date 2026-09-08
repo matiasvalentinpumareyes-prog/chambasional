@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timezone
 
-os.environ["DATABASE_URL"] = "postgresql+psycopg2://postgres:postgres@localhost:5432/marketing_predictivo_test"
+os.environ["DATABASE_URL"] = "postgresql+psycopg2://postgres:postgres@localhost:5432/db_regresape_test"
 
 import pytest
 from fastapi.testclient import TestClient

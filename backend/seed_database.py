@@ -69,7 +69,7 @@ def create_business_and_admin(db) -> Business:
 
     admin = User(
         business_id=business.id, name="Administrador Demo", email="admin@demo.com",
-        hashed_password=hash_password("12345"), role=UserRole.admin,
+        hashed_password=hash_password("Demo12345"), role=UserRole.admin,
     )
     db.add(admin)
     db.commit()
