@@ -1,15 +1,11 @@
 import uuid
 from datetime import date, datetime
-
 from sqlalchemy import String, Text, SmallInteger, Integer, Numeric, Date, ForeignKey, UniqueConstraint, ForeignKeyConstraint, CheckConstraint, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
 from app.models.base import Base, TimestampMixin
-
 
 def gen_uuid() -> str:
     return str(uuid.uuid4())
-
 
 class Cliente(Base, TimestampMixin):
     __tablename__ = "cliente"

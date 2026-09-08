@@ -1,4 +1,4 @@
-"""Endpoints dinámicos para catálogos base — leen directamente de la BD, sin hardcode.
+"""Endpoints dinámicos para catálogos base — leen directamente de la BD.
 
 Tablas: metodos_pago, canales_marketing, segmentos, roles, documento, patrones_compra, etc.
 Cualquier INSERT en estas tablas se refleja inmediatamente sin cambiar código.

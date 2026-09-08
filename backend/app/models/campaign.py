@@ -5,7 +5,6 @@ from app.models.campanas import Campaign, CampaignRecipient
 from app.models.campanas import Comunicacion as Communication
 
 class CampaignStatus(str, Enum):
-    """Estado campañas dinámico (campaigns.estado) — sin hardcode."""
     @classmethod
     def _missing_(cls, value):
         if isinstance(value, (str, int)):

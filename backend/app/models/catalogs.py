@@ -10,7 +10,6 @@ from app.models.base import Base, TimestampMixin
 def gen_uuid() -> str:
     return str(uuid.uuid4())
 
-
 class Departamento(Base, TimestampMixin):
     __tablename__ = "departamento"
     __table_args__ = (UniqueConstraint("dep_nombre", name="uq_departamento_nombre"),)

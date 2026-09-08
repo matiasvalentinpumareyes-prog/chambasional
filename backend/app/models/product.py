@@ -6,7 +6,7 @@ from app.models.comercio import Categoria as Category
 from app.models.comercio import ProductoMarca, ProductoPrecio, ProductoStock  # noqa: F401
 
 class ProductStatus(str, Enum):
-    """Estado producto dinámico (producto.estado SMALLINT) — sin hardcode."""
+    """Estado producto dinámico (producto.estado SMALLINT)"""
     @classmethod
     def _missing_(cls, value):
         if isinstance(value, (str, int)):

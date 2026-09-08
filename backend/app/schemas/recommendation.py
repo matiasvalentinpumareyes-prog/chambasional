@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 
 class CanalCodigo(str, Enum):
-    """Canales dinámicos vía canales_marketing.can_codigo — sin hardcode."""
+    """Canales dinámicos vía canales_marketing.can_codigo"""
     @classmethod
     def _missing_(cls, value):
         if isinstance(value, str):

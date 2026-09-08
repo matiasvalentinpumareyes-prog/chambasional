@@ -6,8 +6,6 @@ from app.models.ventas import VentaItem as SaleItem
 
 class PaymentMethod(str, Enum):
     """Métodos de pago dinámicos vía tabla metodos_pago (mtp_id/mtp_nombre).
-
-    Sin hardcode: cualquier valor existente en metodos_pago es válido.
     Listar disponibles: GET /catalogos/metodos-pago
     """
 

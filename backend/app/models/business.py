@@ -6,7 +6,6 @@ from app.models.empresa import Usuario as User
 from app.models.empresa import UsuarioPersonal  # noqa: F401
 
 class UserRole(str, Enum):
-    """Roles dinámicos vía roles.rol_codigo — sin hardcode."""
     @classmethod
     def _missing_(cls, value):
         if isinstance(value, str):

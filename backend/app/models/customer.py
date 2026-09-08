@@ -7,7 +7,7 @@ from app.models.cliente import Cliente as Customer
 from app.models.cliente import ClienteConsentimiento, ClienteSegmento, ClienteFeatures  # noqa: F401
 
 class Channel(str, Enum):
-    """Canales dinámicos vía canales_marketing.can_codigo — sin hardcode."""
+    """Canales dinámicos vía canales_marketing.can_codigo"""
     @classmethod
     def _missing_(cls, value):
         if isinstance(value, str):
@@ -38,7 +38,7 @@ class ActivityStatus(str, Enum):
         return None
 
 class CustomerSegment(str, Enum):
-    """Segmentos dinámicos vía segmentos.seg_codigo — sin hardcode."""
+    """Segmentos dinámicos vía segmentos.seg_codigo"""
     @classmethod
     def _missing_(cls, value):
         if isinstance(value, str):
@@ -58,7 +58,6 @@ class CustomerValue(str, Enum):
             return obj
         return None
 
-# Alias legacy para código viejo que usa business_id/id/first_name etc.
 try:
     Customer.business_id = property(lambda self: self.emp_id)
     Customer.id = property(lambda self: self.cli_id)

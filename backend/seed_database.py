@@ -1,4 +1,4 @@
-"""Seed dinámico — toma catálogos directamente de la BD (sin hardcode).
+"""Seed dinámico
 
 Usa tablas reales: empresa, cliente, producto, ventas, metodos_pago, canales_marketing, documento, etc.
 No hardcodea enums: cualquier nuevo método de pago/canal/segmento añadido en BD se usa automáticamente.
@@ -192,7 +192,7 @@ def main():
         emp = create_empresa_and_admin(db)
         productos = create_productos(db, emp.emp_id)
         create_clientes_y_ventas(db, emp.emp_id, productos, count=300)
-        print("\nSeed dinámico completado (sin hardcode de canales/métodos). Añade nuevos metodos_pago/canal y se usarán automáticamente.")
+        print("\nSeed dinámico completado. Añade nuevos metodos_pago/canal y se usarán automáticamente.")
     finally:
         db.close()
 
