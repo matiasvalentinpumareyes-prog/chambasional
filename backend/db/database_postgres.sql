@@ -258,6 +258,7 @@ subcat_id UUID NOT NULL PRIMARY KEY DEFAULT (uuid_generate_v1mc()),
         FOREIGN KEY (emp_id) REFERENCES empresa(emp_id),
     CONSTRAINT fk_subcategoria_categoria
         FOREIGN KEY (emp_id, cat_id) REFERENCES categorias(emp_id, cat_id)
+	
 );
 
 CREATE TABLE producto_marca (
@@ -276,9 +277,8 @@ prd_marca_id UUID NOT NULL PRIMARY KEY DEFAULT (uuid_generate_v1mc()),
 );
 
 CREATE TABLE producto (
-prd_id UUID NOT NULL PRIMARY KEY DEFAULT (uuid_generate_v1mc()),
+    prd_id UUID NOT NULL PRIMARY KEY DEFAULT (uuid_generate_v1mc()),
     emp_id UUID NOT NULL,
-    cat_id UUID NULL,
     subcat_id UUID NULL,
     prd_marca_id UUID NULL,
     prd_sku VARCHAR(100) NULL,
@@ -290,20 +290,27 @@ prd_id UUID NOT NULL PRIMARY KEY DEFAULT (uuid_generate_v1mc()),
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(100) NULL,
     updated_by VARCHAR(100) NULL,
-    CONSTRAINT uq_producto_emp_prd UNIQUE (emp_id, prd_id),
-    CONSTRAINT uq_producto_emp_sku UNIQUE (emp_id, prd_sku),
-    CONSTRAINT uq_producto_emp_codbarra UNIQUE (emp_id, prd_codbarra),
+
+    CONSTRAINT uq_producto_emp_prd
+        UNIQUE (emp_id, prd_id),
+
+    CONSTRAINT uq_producto_emp_sku
+        UNIQUE (emp_id, prd_sku),
+
+    CONSTRAINT uq_producto_emp_codbarra
+        UNIQUE (emp_id, prd_codbarra),
 
     CONSTRAINT fk_producto_empresa
-        FOREIGN KEY (emp_id) REFERENCES empresa(emp_id),
-    CONSTRAINT fk_producto_categoria
-        FOREIGN KEY (emp_id, cat_id) REFERENCES categorias(emp_id, cat_id),
+        FOREIGN KEY (emp_id)
+        REFERENCES empresa(emp_id),
+
     CONSTRAINT fk_producto_subcategoria
-        FOREIGN KEY (emp_id, cat_id, subcat_id) REFERENCES subcategorias(emp_id, cat_id, subcat_id),
+        FOREIGN KEY (emp_id, subcat_id)
+        REFERENCES subcategorias(emp_id, subcat_id),
+
     CONSTRAINT fk_producto_marca
-        FOREIGN KEY (emp_id, prd_marca_id) REFERENCES producto_marca(emp_id, prd_marca_id),
-    CONSTRAINT chk_producto_subcat_requiere_cat
-        CHECK (subcat_id IS NULL OR cat_id IS NOT NULL)
+        FOREIGN KEY (emp_id, prd_marca_id)
+        REFERENCES producto_marca(emp_id, prd_marca_id)
 );
 
 CREATE TABLE producto_precios (

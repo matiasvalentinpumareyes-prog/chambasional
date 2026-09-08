@@ -63,7 +63,7 @@ alembic upgrade head
 
 # Cargar datos de demostración (1200 clientes, 37 productos, ~11,500 ventas)
 python seed_database.py
-# Esquema fuente: db/database_postgres.sql (43 tablas, ver backend/DATABASE.md)
+# Esquema fuente: db/database_postgres.sql (44 tablas, ver backend/DATABASE.md)
 ```
 
 Esto crea un usuario administrador de prueba:
