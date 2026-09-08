@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Marketing Predictivo API"
     API_V1_PREFIX: str = "/api"
 
-    DATABASE_URL: str = "postgresql+psycopg2://postgres:postgres@localhost:5432/marketing_predictivo"
+    DATABASE_URL: str = "postgresql+psycopg2://postgres:postgres@localhost:5432/db_regresape"
 
     SECRET_KEY: str = "CHANGE_ME_IN_PRODUCTION_USE_ENV_VAR"
     ALGORITHM: str = "HS256"

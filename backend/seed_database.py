@@ -1,15 +1,3 @@
-"""
-Script de carga de datos de demostración (sección 45 del brief).
-
-Genera un dataset sintético reproducible (semilla fija) para un negocio
-demo: al menos 1000 clientes, 30+ productos y varios miles de ventas, con
-distintos comportamientos de compra (activos, en riesgo, dormidos,
-perdidos) para poder probar RFM, churn y recomendaciones de forma
-realista. No usa datos personales reales.
-
-Uso:
-    python seed_database.py
-"""
 import random
 from datetime import datetime, timedelta, timezone
 
@@ -81,7 +69,7 @@ def create_business_and_admin(db) -> Business:
 
     admin = User(
         business_id=business.id, name="Administrador Demo", email="admin@demo.com",
-        hashed_password=hash_password("Demo12345"), role=UserRole.admin,
+        hashed_password=hash_password("12345"), role=UserRole.admin,
     )
     db.add(admin)
     db.commit()

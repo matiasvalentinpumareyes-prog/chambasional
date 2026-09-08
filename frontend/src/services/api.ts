@@ -17,29 +17,10 @@ import type {
   BusinessSettings,
 } from "@/types";
 
-/**
- * Adapter de API.
- *
- * VITE_USE_MOCK=true (valor por defecto en desarrollo/demo): todas las
- * funciones leen/escriben sobre la base de datos en memoria (services/mockDb.ts).
- *
- * VITE_USE_MOCK=false: las mismas funciones deberían hacer fetch() contra
- * VITE_API_URL, hacia los endpoints reales descritos en la sección 34 del
- * brief (/api/customers, /api/products, /api/sales, etc.). La forma de los
- * datos devueltos (los tipos de src/types) es la que ya expone FastAPI en
- * su documentación Swagger, así que el resto de la aplicación no cambia.
- *
- * Esto es exactamente el patrón "adapter" pedido en el brief para los
- * canales de notificación (sección 23), aplicado aquí también a la propia
- * capa de datos.
- */
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK !== "false";
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000/api";
 
-// Simula latencia de red realista en modo mock, para que los estados de
-// carga de la interfaz (loading, skeletons) se comporten como con un
-// backend real y no den una falsa sensación de instantaneidad.
 function delay<T>(value: T, ms = 220): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), ms));
 }

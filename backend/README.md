@@ -7,7 +7,7 @@ del roadmap del proyecto (base de datos, backend y Machine Learning).
 ## 1. Qué hace
 
 Implementa de punta a punta la lógica de negocio descrita en el brief:
-autenticación con JWT, multi-tenancy real (aislamiento por `business_id`
+autenticación con JWT, multi-tenancy real (aislamiento por `emp_id`
 verificado en cada consulta, nunca solo en el frontend), CRUD de
 clientes/productos/ventas con transacciones atómicas, cálculo de RFM y
 detección de actividad usando el intervalo individual de cada cliente (no
@@ -47,14 +47,13 @@ contienen lógica de negocio (eso vive en `services/`).
 ```bash
 cd backend
 python3 -m venv venv
-source venv/bin/activate       # Windows: venv\Scripts\activate
+source venv/bin/activate
 pip install -r requirements.txt
 
 cp .env.example .env
-# Editar .env con la URL de tu PostgreSQL local
 
 # Crear la base de datos
-createdb marketing_predictivo
+createdb DB_RegresaPE
 
 # Aplicar migraciones
 alembic upgrade head
@@ -67,7 +66,7 @@ Esto crea un usuario administrador de prueba:
 
 ```
 email: admin@demo.com
-password: Demo12345
+password: 12345
 ```
 
 ## 5. Ejecutar el servidor
@@ -141,14 +140,14 @@ El backend corre las migraciones automáticamente al iniciar
 
 ## 10. Decisiones técnicas relevantes
 
-- **Multi-tenancy**: cada repositorio recibe `business_id` como parámetro
+- **Multi-tenancy**: cada repositorio recibe `emp_id` como parámetro
   obligatorio y lo aplica en el `WHERE` de cada consulta. Verificado con
   tests de integración específicos.
 - **Dinero**: todos los campos monetarios usan `NUMERIC(12,2)` en
   PostgreSQL, nunca `float`.
-- **Churn score vs. probabilidad**: `churn_probability` es la probabilidad
+- **Churn score vs. probabilidad**: `` es la probabilidad
   calibrada real (útil para explicar "X% de probabilidad" al usuario);
-  `churn_score` (0-100, el que alimenta los niveles bajo/medio/alto/crítico)
+  `` (0-100, el que alimenta los niveles bajo/medio/alto/crítico)
   es un **percentil relativo** dentro de la base de clientes del negocio.
   Esto se documenta en detalle en `ML.md` porque fue un hallazgo importante
   durante el desarrollo (ver sección de auditoría).

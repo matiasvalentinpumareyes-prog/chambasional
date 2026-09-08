@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 
-class DashboardMetricsOut(BaseModel):
+class DashboardMetraicsOut(BaseModel):
     total_sales: float
     total_customers: int
     active_customers: int
