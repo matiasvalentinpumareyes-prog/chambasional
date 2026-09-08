@@ -6,16 +6,24 @@ from app.models.marketing import Recomendacion as Recommendation
 from app.models.cliente import ClienteFeatures  # noqa: F401
 
 class RiskLevel(str, Enum):
-    low = "low"
-    medium = "medium"
-    high = "high"
-    critical = "critical"
+    @classmethod
+    def _missing_(cls, value):
+        if isinstance(value, str):
+            obj = str.__new__(cls, value)
+            obj._name_ = value
+            obj._value_ = value
+            return obj
+        return None
 
 class RecommendationMethod(str, Enum):
-    rules = "rules"
-    collaborative_filtering = "collaborative_filtering"
-    frequency = "frequency"
-    cold_start = "cold_start"
+    @classmethod
+    def _missing_(cls, value):
+        if isinstance(value, str):
+            obj = str.__new__(cls, value)
+            obj._name_ = value
+            obj._value_ = value
+            return obj
+        return None
 
 class Strategy:
     pass

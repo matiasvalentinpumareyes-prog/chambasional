@@ -6,8 +6,16 @@ from app.models.comercio import Categoria as Category
 from app.models.comercio import ProductoMarca, ProductoPrecio, ProductoStock  # noqa: F401
 
 class ProductStatus(str, Enum):
-    active = "1"
-    inactive = "0"
+    """Estado producto dinámico (producto.estado SMALLINT) — sin hardcode."""
+    @classmethod
+    def _missing_(cls, value):
+        if isinstance(value, (str, int)):
+            v = str(value)
+            obj = str.__new__(cls, v)
+            obj._name_ = v
+            obj._value_ = v
+            return obj
+        return None
 
 try:
     Product.business_id = property(lambda self: self.emp_id)

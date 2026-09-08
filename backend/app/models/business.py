@@ -6,8 +6,15 @@ from app.models.empresa import Usuario as User
 from app.models.empresa import UsuarioPersonal  # noqa: F401
 
 class UserRole(str, Enum):
-    admin = "ADMIN_EMPRESA"
-    business_user = "OPERADOR"
+    """Roles dinámicos vía roles.rol_codigo — sin hardcode."""
+    @classmethod
+    def _missing_(cls, value):
+        if isinstance(value, str):
+            obj = str.__new__(cls, value)
+            obj._name_ = value
+            obj._value_ = value
+            return obj
+        return None
 
 def gen_uuid():
     from app.models.base import gen_uuid as _gen

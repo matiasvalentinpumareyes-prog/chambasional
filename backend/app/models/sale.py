@@ -5,10 +5,20 @@ from app.models.ventas import Venta as Sale
 from app.models.ventas import VentaItem as SaleItem
 
 class PaymentMethod(str, Enum):
-    cash = "Efectivo"
-    card = "Tarjeta"
-    digital_wallet = "Digital"
-    other = "Otro"
+    """Métodos de pago dinámicos vía tabla metodos_pago (mtp_id/mtp_nombre).
+
+    Sin hardcode: cualquier valor existente en metodos_pago es válido.
+    Listar disponibles: GET /catalogos/metodos-pago
+    """
+
+    @classmethod
+    def _missing_(cls, value):
+        if isinstance(value, str):
+            obj = str.__new__(cls, value)
+            obj._name_ = value.upper().replace(" ", "_").replace("-", "_")
+            obj._value_ = value
+            return obj
+        return None
 
 try:
     Sale.business_id = property(lambda self: self.emp_id)

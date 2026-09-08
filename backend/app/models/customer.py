@@ -7,37 +7,56 @@ from app.models.cliente import Cliente as Customer
 from app.models.cliente import ClienteConsentimiento, ClienteSegmento, ClienteFeatures  # noqa: F401
 
 class Channel(str, Enum):
-    email = "EMAIL"
-    whatsapp = "WHATSAPP"
-    sms = "SMS"
-    internal = "PUSH"
+    """Canales dinámicos vía canales_marketing.can_codigo — sin hardcode."""
+    @classmethod
+    def _missing_(cls, value):
+        if isinstance(value, str):
+            obj = str.__new__(cls, value.upper())
+            obj._name_ = value.upper()
+            obj._value_ = value.upper()
+            return obj
+        return None
 
 class CustomerStatus(str, Enum):
-    active = "1"
-    inactive = "0"
+    @classmethod
+    def _missing_(cls, value):
+        if isinstance(value, str):
+            obj = str.__new__(cls, value)
+            obj._name_ = value
+            obj._value_ = value
+            return obj
+        return None
 
 class ActivityStatus(str, Enum):
-    active = "ACTIVO"
-    at_risk = "EN_RIESGO"
-    dormant = "PERDIDO"
-    lost = "PERDIDO"
+    @classmethod
+    def _missing_(cls, value):
+        if isinstance(value, str):
+            obj = str.__new__(cls, value)
+            obj._name_ = value
+            obj._value_ = value
+            return obj
+        return None
 
 class CustomerSegment(str, Enum):
-    vip = "LEAL"
-    loyal = "LEAL"
-    frequent = "ACTIVO"
-    new = "NUEVO"
-    potential = "NUEVO"
-    at_risk = "EN_RIESGO"
-    dormant = "PERDIDO"
-    lost = "PERDIDO"
-    high_value = "LEAL"
-    low_value = "NUEVO"
+    """Segmentos dinámicos vía segmentos.seg_codigo — sin hardcode."""
+    @classmethod
+    def _missing_(cls, value):
+        if isinstance(value, str):
+            obj = str.__new__(cls, value)
+            obj._name_ = value
+            obj._value_ = value
+            return obj
+        return None
 
 class CustomerValue(str, Enum):
-    low = "low"
-    medium = "medium"
-    high = "high"
+    @classmethod
+    def _missing_(cls, value):
+        if isinstance(value, str):
+            obj = str.__new__(cls, value)
+            obj._name_ = value
+            obj._value_ = value
+            return obj
+        return None
 
 # Alias legacy para código viejo que usa business_id/id/first_name etc.
 try:

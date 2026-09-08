@@ -5,25 +5,37 @@ from pydantic import BaseModel, Field
 
 
 class CanalCodigo(str, Enum):
-    """Valores exactos de canales_marketing.can_codigo (BD)."""
-    EMAIL = "EMAIL"
-    SMS = "SMS"
-    WHATSAPP = "WHATSAPP"
-    PUSH = "PUSH"
+    """Canales dinámicos vía canales_marketing.can_codigo — sin hardcode."""
+    @classmethod
+    def _missing_(cls, value):
+        if isinstance(value, str):
+            obj = str.__new__(cls, value.upper())
+            obj._name_ = value.upper()
+            obj._value_ = value.upper()
+            return obj
+        return None
 
 
 class RecommendationMethod(str, Enum):
-    """Método generación recomendación — valores de recomendaciones rec_titulo/prioridad o reglas."""
-    rules = "rules"
-    collaborative_filtering = "collaborative_filtering"
-    frequency = "frequency"
-    cold_start = "cold_start"
+    @classmethod
+    def _missing_(cls, value):
+        if isinstance(value, str):
+            obj = str.__new__(cls, value)
+            obj._name_ = value
+            obj._value_ = value
+            return obj
+        return None
 
 
 class CustomerValue(str, Enum):
-    low = "low"
-    medium = "medium"
-    high = "high"
+    @classmethod
+    def _missing_(cls, value):
+        if isinstance(value, str):
+            obj = str.__new__(cls, value)
+            obj._name_ = value
+            obj._value_ = value
+            return obj
+        return None
 
 
 class RecommendationOut(BaseModel):

@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import auth, campaigns, dashboard, health, imports, models, predictions, products, sales, settings as settings_router
+from app.api import auth, campaigns, catalogs, dashboard, health, imports, models, predictions, products, sales, settings as settings_router
 from app.api import clientes, stock, ventas
 from app.core.config import settings
 from app.core.errors import AppError
@@ -39,6 +39,8 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 
 app.include_router(health.router, prefix=settings.API_V1_PREFIX)
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
+# Catálogos dinámicos (no hardcodeados) — metodos_pago, canales, segmentos, etc.
+app.include_router(catalogs.router, prefix=settings.API_V1_PREFIX)
 # Clientes: nuevo /clientes + legacy /customers (via clientes.router_legacy y via customers shim)
 app.include_router(clientes.router, prefix=settings.API_V1_PREFIX)
 app.include_router(clientes.router_legacy, prefix=settings.API_V1_PREFIX)

@@ -57,6 +57,20 @@ class VentaRepository:
         if not items_input:
             raise AppError("VENTA_SIN_ITEMS", "La venta debe tener al menos un item.")
 
+        # Validar método de pago dinámico vía BD (no hardcodeado)
+        if mtp_id is not None:
+            from app.models.catalogs import MetodoPago
+            metodo = self.db.scalar(select(MetodoPago).where(MetodoPago.mtp_id == mtp_id, MetodoPago.estado == 1))
+            if not metodo:
+                raise AppError("METODO_PAGO_NOT_FOUND", f"Metodo de pago mtp_id {mtp_id} no existe o está inactivo. Lista disponibles en GET /catalogos/metodos-pago")
+
+        # Validar cupón si se provee
+        if cupon_id is not None:
+            from app.models.marketing import Cupon
+            cupon = self.db.scalar(select(Cupon).where(Cupon.emp_id == emp_id, Cupon.cup_id == cupon_id))
+            if not cupon:
+                raise AppError("CUPON_NOT_FOUND", f"Cupón {cupon_id} no existe para emp_id {emp_id}")
+
         venta_items: list[VentaItem] = []
         ven_descuento = Decimal("0.00")
         ven_total = Decimal("0.00")
