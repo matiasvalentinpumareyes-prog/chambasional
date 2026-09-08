@@ -7,6 +7,8 @@ import { TodayActionsPage } from "@/pages/TodayActionsPage";
 import { CustomersPage } from "@/pages/CustomersPage";
 import { AtRiskPage } from "@/pages/AtRiskPage";
 import { ProductsPage } from "@/pages/ProductsPage";
+import { StockPage } from "@/pages/StockPage";
+import { CategoriesPage, SubcategoriasPage } from "@/pages/CategoriesPage";
 import { SalesPage } from "@/pages/SalesPage";
 import { CampaignsPage } from "@/pages/CampaignsPage";
 import { AnalyticsPage } from "@/pages/AnalyticsPage";
@@ -25,6 +27,9 @@ export default function App() {
           <Route path="/clientes" element={<ProtectedRoute><CustomersPage /></ProtectedRoute>} />
           <Route path="/riesgo" element={<ProtectedRoute><AtRiskPage /></ProtectedRoute>} />
           <Route path="/productos" element={<ProtectedRoute><ProductsPage /></ProtectedRoute>} />
+          <Route path="/stock" element={<ProtectedRoute><StockPage /></ProtectedRoute>} />
+          <Route path="/categorias" element={<ProtectedRoute><CategoriesPage /></ProtectedRoute>} />
+          <Route path="/subcategorias" element={<ProtectedRoute><SubcategoriasPage /></ProtectedRoute>} />
           <Route path="/ventas" element={<ProtectedRoute><SalesPage /></ProtectedRoute>} />
           <Route path="/campanas" element={<ProtectedRoute><CampaignsPage /></ProtectedRoute>} />
           <Route path="/analitica" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />

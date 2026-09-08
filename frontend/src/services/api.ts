@@ -1,12 +1,9 @@
-import { db, type QueryOptions } from "./mockDb";
-import { computeDashboardMetrics, computeDashboardSeries } from "./dashboard";
 import type {
   AuthUser,
   Campaign,
   Customer,
   DashboardMetrics,
   DashboardSeries,
-  ImportError,
   ImportSummary,
   ModelVersion,
   Paginated,
@@ -17,13 +14,7 @@ import type {
   BusinessSettings,
 } from "@/types";
 
-
-const USE_MOCK = import.meta.env.VITE_USE_MOCK !== "false";
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000/api";
-
-function delay<T>(value: T, ms = 220): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), ms));
-}
 
 async function realFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const token = localStorage.getItem("auth_token");
@@ -44,27 +35,20 @@ async function realFetch<T>(path: string, options?: RequestInit): Promise<T> {
 
 // ---------------- Auth ----------------
 
-const MOCK_USER: AuthUser = {
-  id: "user_1",
-  name: "Administrador Demo",
-  email: "admin@demo.com",
-  role: "admin",
-  businessId: "biz_demo_1",
-  businessName: "Café La Espiga",
-};
-
 export const authApi = {
   login: async (email: string, _password: string): Promise<AuthUser> => {
-    if (USE_MOCK) {
-      db.init();
-      const user = { ...MOCK_USER, email };
-      localStorage.setItem("auth_token", "mock-jwt-token");
-      localStorage.setItem("auth_user", JSON.stringify(user));
-      return delay(user, 400);
-    }
     const data = await realFetch<{ token: string; user: AuthUser }>("/auth/login", {
       method: "POST",
-      body: JSON.stringify({ email, password: _password }),
+      body: JSON.stringify({ usu_email: email, password: _password }),
+    });
+    localStorage.setItem("auth_token", data.token);
+    localStorage.setItem("auth_user", JSON.stringify(data.user));
+    return data.user;
+  },
+  register: async (payload: { emp_ruc: string; emp_razon_social: string; emp_nombre_comercial: string; usu_usuario: string; usu_email: string; password: string; usp_nombres: string }): Promise<AuthUser> => {
+    const data = await realFetch<{ token: string; user: AuthUser }>("/auth/register", {
+      method: "POST",
+      body: JSON.stringify(payload),
     });
     localStorage.setItem("auth_token", data.token);
     localStorage.setItem("auth_user", JSON.stringify(data.user));
@@ -84,11 +68,9 @@ export const authApi = {
 
 export const dashboardApi = {
   getMetrics: async (): Promise<DashboardMetrics> => {
-    if (USE_MOCK) return delay(computeDashboardMetrics());
     return realFetch<DashboardMetrics>("/dashboard");
   },
   getSeries: async (): Promise<DashboardSeries> => {
-    if (USE_MOCK) return delay(computeDashboardSeries());
     return realFetch<DashboardSeries>("/dashboard/series");
   },
 };
@@ -96,49 +78,52 @@ export const dashboardApi = {
 // ---------------- Clientes ----------------
 
 export const customersApi = {
-  list: async (opts: QueryOptions): Promise<Paginated<Customer>> => {
-    if (USE_MOCK) return delay(db.listCustomers(opts));
+  list: async (opts: { page?: number; pageSize?: number; search?: string; [k: string]: any }): Promise<Paginated<Customer>> => {
     const qs = new URLSearchParams(opts as any).toString();
-    return realFetch<Paginated<Customer>>(`/customers?${qs}`);
+    return realFetch<Paginated<Customer>>(`/clientes?${qs}`);
   },
   get: async (id: string): Promise<Customer | null> => {
-    if (USE_MOCK) return delay(db.getCustomer(id));
-    return realFetch<Customer | null>(`/customers/${id}`);
+    return realFetch<Customer | null>(`/clientes/${id}`);
   },
   create: async (input: Partial<Customer>): Promise<Customer> => {
-    if (USE_MOCK) return delay(db.createCustomer(input));
-    return realFetch<Customer>(`/customers`, { method: "POST", body: JSON.stringify(input) });
+    // Adaptar frontend EN -> backend ES (cli_nombre_razon_social, cli_email, doc_id)
+    const payload: any = {
+      cli_nombre_razon_social: `${input.firstName ?? ""} ${input.lastName ?? ""}`.trim(),
+      cli_email: input.email,
+      cli_celular: input.phone,
+      doc_id: (input as any).doc_id,
+      cli_ndocumento: (input as any).cli_ndocumento,
+    };
+    return realFetch<Customer>(`/clientes`, { method: "POST", body: JSON.stringify(payload) });
   },
   update: async (id: string, patch: Partial<Customer>): Promise<Customer | null> => {
-    if (USE_MOCK) return delay(db.updateCustomer(id, patch));
-    return realFetch<Customer | null>(`/customers/${id}`, { method: "PUT", body: JSON.stringify(patch) });
+    const payload: any = {
+      cli_nombre_razon_social: patch.firstName && patch.lastName ? `${patch.firstName} ${patch.lastName}` : undefined,
+      cli_email: patch.email,
+      cli_celular: patch.phone,
+    };
+    return realFetch<Customer | null>(`/clientes/${id}`, { method: "PUT", body: JSON.stringify(payload) });
   },
   deactivate: async (id: string): Promise<Customer | null> => {
-    if (USE_MOCK) return delay(db.deactivateCustomer(id));
-    return realFetch<Customer | null>(`/customers/${id}`, { method: "DELETE" });
+    return realFetch<Customer | null>(`/clientes/${id}`, { method: "DELETE" });
   },
   sales: async (id: string): Promise<Sale[]> => {
-    if (USE_MOCK) return delay(db.getCustomerSales(id));
-    return realFetch<Sale[]>(`/customers/${id}/sales`);
+    return realFetch<Sale[]>(`/ventas?cli_id=${id}`);
   },
   recommendations: async (id: string): Promise<ProductRecommendation[]> => {
-    if (USE_MOCK) return delay(db.getCustomerRecommendations(id));
-    return realFetch<ProductRecommendation[]>(`/recommendations?customer_id=${id}`);
+    return realFetch<ProductRecommendation[]>(`/clientes/${id}/recommendations`);
   },
   strategy: async (id: string): Promise<RecoveryStrategy | null> => {
-    if (USE_MOCK) return delay(db.getCustomerStrategy(id));
-    return realFetch<RecoveryStrategy | null>(`/strategies?customer_id=${id}`);
+    return realFetch<RecoveryStrategy | null>(`/clientes/${id}/strategy`);
   },
 };
 
 export const atRiskApi = {
-  list: async (opts: QueryOptions): Promise<Paginated<Customer>> => {
-    if (USE_MOCK) return delay(db.listAtRiskCustomers(opts));
+  list: async (opts: { page?: number; pageSize?: number; search?: string; [k: string]: any }): Promise<Paginated<Customer>> => {
     const qs = new URLSearchParams(opts as any).toString();
     return realFetch<Paginated<Customer>>(`/predictions/churn?${qs}`);
   },
   todayActions: async (limit = 20): Promise<RecoveryStrategy[]> => {
-    if (USE_MOCK) return delay(db.listTodayActions(limit));
     return realFetch<RecoveryStrategy[]>(`/strategies/today?limit=${limit}`);
   },
 };
@@ -146,144 +131,89 @@ export const atRiskApi = {
 // ---------------- Productos ----------------
 
 export const productsApi = {
-  list: async (opts: QueryOptions): Promise<Paginated<Product>> => {
-    if (USE_MOCK) return delay(db.listProducts(opts));
+  list: async (opts: { page?: number; pageSize?: number; search?: string; [k: string]: any }): Promise<Paginated<Product>> => {
     const qs = new URLSearchParams(opts as any).toString();
-    return realFetch<Paginated<Product>>(`/products?${qs}`);
+    return realFetch<Paginated<Product>>(`/productos?${qs}`);
   },
-  create: async (input: Omit<Product, "id" | "businessId" | "margin">): Promise<Product> => {
-    if (USE_MOCK) return delay(db.createProduct(input));
-    return realFetch<Product>(`/products`, { method: "POST", body: JSON.stringify(input) });
+  create: async (input: any): Promise<Product> => {
+    return realFetch<Product>(`/productos`, { method: "POST", body: JSON.stringify(input) });
   },
   update: async (id: string, patch: Partial<Product>): Promise<Product | null> => {
-    if (USE_MOCK) return delay(db.updateProduct(id, patch));
-    return realFetch<Product | null>(`/products/${id}`, { method: "PUT", body: JSON.stringify(patch) });
+    return realFetch<Product | null>(`/productos/${id}`, { method: "PUT", body: JSON.stringify(patch) });
   },
   deactivate: async (id: string): Promise<Product | null> => {
-    if (USE_MOCK) return delay(db.deactivateProduct(id));
-    return realFetch<Product | null>(`/products/${id}`, { method: "DELETE" });
+    return realFetch<Product | null>(`/productos/${id}`, { method: "DELETE" });
   },
   categories: async (): Promise<string[]> => {
-    if (USE_MOCK) return delay(db.categories());
-    return realFetch<string[]>(`/products/categories`);
+    return realFetch<string[]>(`/productos/categorias`);
   },
 };
 
 // ---------------- Ventas ----------------
 
 export const salesApi = {
-  list: async (opts: QueryOptions): Promise<Paginated<Sale>> => {
-    if (USE_MOCK) return delay(db.listSales(opts));
+  list: async (opts: { page?: number; pageSize?: number; [k: string]: any }): Promise<Paginated<Sale>> => {
     const qs = new URLSearchParams(opts as any).toString();
-    return realFetch<Paginated<Sale>>(`/sales?${qs}`);
+    return realFetch<Paginated<Sale>>(`/ventas?${qs}`);
   },
-  create: async (input: Parameters<typeof db.createSale>[0]): Promise<Sale> => {
-    if (USE_MOCK) return delay(db.createSale(input));
-    return realFetch<Sale>(`/sales`, { method: "POST", body: JSON.stringify(input) });
+  create: async (input: { customerId: string; items: { productId: string; quantity: number }[]; channel?: string }): Promise<Sale> => {
+    const payload: any = {
+      cli_id: input.customerId,
+      items: input.items.map((it) => ({ prd_id: it.productId, cantidad: it.quantity })),
+      venta_origen: input.channel,
+    };
+    return realFetch<Sale>(`/ventas`, { method: "POST", body: JSON.stringify(payload) });
+  },
+};
+
+// ---------------- Stock ----------------
+
+export const stockApi = {
+  list: async (): Promise<any[]> => {
+    return realFetch<any[]>(`/stock`);
+  },
+  get: async (prd_id: string): Promise<any> => {
+    return realFetch<any>(`/stock/${prd_id}`);
+  },
+  movimiento: async (prd_id: string, delta: number, motivo?: string): Promise<any> => {
+    return realFetch<any>(`/stock/movimiento`, { method: "POST", body: JSON.stringify({ prd_id, delta, motivo }) });
   },
 };
 
 // ---------------- Campañas ----------------
 
 export const campaignsApi = {
-  list: async (opts: QueryOptions): Promise<Paginated<Campaign>> => {
-    if (USE_MOCK) return delay(db.listCampaigns(opts));
+  list: async (opts: { page?: number; pageSize?: number; [k: string]: any }): Promise<Paginated<Campaign>> => {
     const qs = new URLSearchParams(opts as any).toString();
     return realFetch<Paginated<Campaign>>(`/campaigns?${qs}`);
   },
   get: async (id: string): Promise<Campaign | null> => {
-    if (USE_MOCK) return delay(db.getCampaign(id));
     return realFetch<Campaign | null>(`/campaigns/${id}`);
   },
-  create: async (input: Omit<Campaign, "id" | "businessId" | "metrics" | "status">): Promise<Campaign> => {
-    if (USE_MOCK) return delay(db.createCampaign(input));
+  create: async (input: any): Promise<Campaign> => {
     return realFetch<Campaign>(`/campaigns`, { method: "POST", body: JSON.stringify(input) });
   },
   updateStatus: async (id: string, status: Campaign["status"]): Promise<Campaign | null> => {
-    if (USE_MOCK) return delay(db.updateCampaignStatus(id, status));
     return realFetch<Campaign | null>(`/campaigns/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) });
   },
-  simulate: async (id: string): Promise<ReturnType<typeof db.simulateCampaign>> => {
-    if (USE_MOCK) return delay(db.simulateCampaign(id), 500);
-    return realFetch<ReturnType<typeof db.simulateCampaign>>(`/campaigns/${id}/simulate`, { method: "POST" });
+  simulate: async (id: string): Promise<any> => {
+    return realFetch<any>(`/campaigns/${id}/simulate`, { method: "POST" });
+  },
+};
+
+// ---------------- Catálogos dinámicos ----------------
+
+export const catalogsApi = {
+  metodosPago: async (): Promise<{ mtp_id: string; mtp_nombre: string }[]> => realFetch(`/catalogos/metodos-pago`),
+  canales: async (): Promise<{ can_id: string; can_codigo: string }[]> => realFetch(`/catalogos/canales`),
+  segmentos: async (): Promise<any[]> => realFetch(`/catalogos/segmentos`),
+  subcategorias: async (cat_id?: string): Promise<any[]> => {
+    const qs = cat_id ? `?cat_id=${cat_id}` : "";
+    return realFetch(`/subcategorias${qs}`);
   },
 };
 
 // ---------------- Importaciones ----------------
-
-function validateRows(
-  type: ImportSummary["type"],
-  rows: Record<string, string>[],
-  existingCustomers: Customer[]
-): { errors: ImportError[]; warnings: ImportError[]; accepted: Record<string, string>[] } {
-  const errors: ImportError[] = [];
-  const warnings: ImportError[] = [];
-  const accepted: Record<string, string>[] = [];
-  const seenEmails = new Set<string>();
-
-  const requiredByType: Record<ImportSummary["type"], string[]> = {
-    customers: ["firstName", "lastName"],
-    products: ["name", "price"],
-    sales: ["customerEmail", "productSku", "quantity", "date"],
-  };
-
-  rows.forEach((row, idx) => {
-    const rowNumber = idx + 2; // +1 por índice base 0, +1 por fila de cabecera
-    let rowHasError = false;
-
-    for (const field of requiredByType[type]) {
-      if (!row[field] || row[field].trim() === "") {
-        errors.push({ row: rowNumber, field, message: `Falta el campo obligatorio "${field}".` });
-        rowHasError = true;
-      }
-    }
-
-    if (type === "customers") {
-      if (row.email) {
-        if (seenEmails.has(row.email)) {
-          errors.push({ row: rowNumber, field: "email", message: "Email duplicado dentro del archivo." });
-          rowHasError = true;
-        }
-        if (existingCustomers.some((c) => c.email === row.email)) {
-          warnings.push({ row: rowNumber, field: "email", message: "Ya existe un cliente con este email; se omitirá." });
-        }
-        seenEmails.add(row.email);
-      } else {
-        warnings.push({ row: rowNumber, field: "email", message: "Cliente sin email: no podrá recibir campañas por ese canal." });
-      }
-    }
-
-    if (type === "products" && row.price) {
-      const price = Number(row.price);
-      if (Number.isNaN(price) || price < 0) {
-        errors.push({ row: rowNumber, field: "price", message: "El precio debe ser un número mayor o igual a 0." });
-        rowHasError = true;
-      }
-    }
-
-    if (type === "sales") {
-      if (row.quantity) {
-        const qty = Number(row.quantity);
-        if (Number.isNaN(qty) || qty <= 0) {
-          errors.push({ row: rowNumber, field: "quantity", message: "La cantidad debe ser un número mayor a 0." });
-          rowHasError = true;
-        }
-      }
-      if (row.date && Number.isNaN(Date.parse(row.date))) {
-        errors.push({ row: rowNumber, field: "date", message: "Fecha inválida." });
-        rowHasError = true;
-      }
-      if (row.customerEmail && !existingCustomers.some((c) => c.email === row.customerEmail)) {
-        errors.push({ row: rowNumber, field: "customerEmail", message: "No existe un cliente con este email." });
-        rowHasError = true;
-      }
-    }
-
-    if (!rowHasError) accepted.push(row);
-  });
-
-  return { errors, warnings, accepted };
-}
 
 export const importsApi = {
   preview: async (
@@ -291,29 +221,12 @@ export const importsApi = {
     fileName: string,
     rows: Record<string, string>[]
   ): Promise<ImportSummary> => {
-    const existingCustomers = USE_MOCK ? db.allCustomers() : [];
-    const { errors, warnings } = validateRows(type, rows, existingCustomers);
-    const summary: ImportSummary = {
-      id: `import_${Date.now()}`,
-      fileName,
-      type,
-      totalRows: rows.length,
-      acceptedRows: rows.length - errors.filter((e, i, arr) => arr.findIndex((x) => x.row === e.row) === i).length,
-      rejectedRows: new Set(errors.map((e) => e.row)).size,
-      errors,
-      warnings,
-      status: "pending_confirmation",
-      createdAt: new Date().toISOString(),
-    };
-    return delay(summary, 400);
+    return realFetch<ImportSummary>(`/imports/preview`, { method: "POST", body: JSON.stringify({ type, file_name: fileName, rows }) });
   },
   confirm: async (summary: ImportSummary): Promise<ImportSummary> => {
-    const confirmed: ImportSummary = { ...summary, status: "confirmed" };
-    if (USE_MOCK) db.registerImport(confirmed);
-    return delay(confirmed, 500);
+    return realFetch<ImportSummary>(`/imports/${summary.id}/confirm`, { method: "POST", body: JSON.stringify({ type: summary.type, file_name: summary.fileName, rows: [] }) });
   },
   history: async (): Promise<ImportSummary[]> => {
-    if (USE_MOCK) return delay(db.listImports());
     return realFetch<ImportSummary[]>(`/imports`);
   },
 };
@@ -322,7 +235,6 @@ export const importsApi = {
 
 export const modelsApi = {
   list: async (): Promise<ModelVersion[]> => {
-    if (USE_MOCK) return delay(db.listModelVersions());
     return realFetch<ModelVersion[]>(`/models`);
   },
 };
@@ -331,13 +243,11 @@ export const modelsApi = {
 
 export const settingsApi = {
   get: async (): Promise<BusinessSettings> => {
-    if (USE_MOCK) return delay(db.getSettings());
     return realFetch<BusinessSettings>(`/settings`);
   },
-  update: async (patch: Parameters<typeof db.updateSettings>[0]): Promise<BusinessSettings> => {
-    if (USE_MOCK) return delay(db.updateSettings(patch));
+  update: async (patch: any): Promise<BusinessSettings> => {
     return realFetch<BusinessSettings>(`/settings`, { method: "PUT", body: JSON.stringify(patch) });
   },
 };
 
-export const IS_MOCK_MODE = USE_MOCK;
+export const IS_MOCK_MODE = false;
