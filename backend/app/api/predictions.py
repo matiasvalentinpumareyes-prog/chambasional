@@ -4,9 +4,9 @@ from sqlalchemy.orm import Session
 from app.api.pagination import PageParams
 from app.core.deps import get_current_user
 from app.db.session import get_db
-from app.models.business import User
-from app.models.customer import ActivityStatus
-from app.models.prediction import RiskLevel
+from app.models.empresa import Usuario
+from app.models.cliente import Cliente
+from app.models.ia import Prediccion
 from app.repositories.customer_repo import CustomerRepository
 from app.schemas.common import Paginated
 from app.schemas.customer import CustomerOut
@@ -59,7 +59,7 @@ def today_actions(limit: int = Query(default=20, ge=1, le=100), db: Session = De
 
         product_name = ""
         if strategy.recommended_product_id:
-            from app.models.product import Product
+            from app.models.comercio import Producto
             product = db.get(Product, strategy.recommended_product_id)
             product_name = product.name if product else ""
 

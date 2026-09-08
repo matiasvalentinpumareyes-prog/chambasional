@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user
 from app.db.session import get_db
-from app.models.business import User
+from app.models.empresa import Usuario
 from app.schemas.dashboard import DashboardMetricsOut, DashboardSeriesOut
 from app.services.dashboard import compute_dashboard_metrics, compute_dashboard_series
 

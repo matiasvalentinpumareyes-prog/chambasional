@@ -3,8 +3,8 @@ from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models.audit import ImportType
-from app.models.customer import Customer
+from app.models.auditoria import Import
+from app.models.cliente import Cliente
 
 REQUIRED_FIELDS: dict[ImportType, list[str]] = {
     ImportType.customers: ["first_name", "last_name"],

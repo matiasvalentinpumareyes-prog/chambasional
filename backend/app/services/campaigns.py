@@ -4,8 +4,8 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models.campaign import Campaign, CampaignRecipient, CampaignStatus, RecipientStatus
-from app.models.customer import Customer
+from app.models.campanas import Campaign, CampaignRecipient, CampaignStatus, RecipientStatus
+from app.models.cliente import Cliente
 from app.services.notifications import send_and_record
 
 

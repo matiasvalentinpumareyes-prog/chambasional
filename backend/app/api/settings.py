@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import require_admin
 from app.db.session import get_db
-from app.models.business import User
-from app.models.customer import Channel
+from app.models.empresa import Usuario
+from app.models.catalogs import CanalMarketing
 from app.schemas.misc import BusinessSettingsOut, BusinessSettingsUpdate
 
 router = APIRouter(prefix="/settings", tags=["settings"])

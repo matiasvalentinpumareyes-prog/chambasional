@@ -35,7 +35,7 @@ def test_protected_endpoint_rejects_invalid_token(client):
 
 def test_settings_endpoint_requires_admin_role(client, db_session, business):
     from app.core.security import create_access_token, hash_password
-    from app.models.business import User, UserRole
+    from app.models.empresa import Usuario
 
     non_admin = User(
         business_id=business.id, name="Vendedor", email="vendedor@test.com",

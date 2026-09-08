@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
-from app.models.customer import ActivityStatus, Customer, CustomerSegment
+from app.models.cliente import Cliente, CustomerSegment
 from app.services.rfm import compute_activity_status, compute_rfm_for_customer, segment_from_rfm
 
 

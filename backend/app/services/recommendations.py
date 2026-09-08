@@ -3,10 +3,10 @@ from datetime import datetime, timezone
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models.customer import Customer
-from app.models.prediction import Recommendation, RecommendationMethod
-from app.models.product import Product, ProductStatus
-from app.models.sale import Sale, SaleItem
+from app.models.cliente import Cliente
+from app.models.marketing import Recomendacion
+from app.models.comercio import Producto
+from app.models.ventas import Venta, VentaItem
 
 MODEL_VERSION = "rules-v1-fallback"
 

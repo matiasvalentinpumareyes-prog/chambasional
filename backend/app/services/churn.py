@@ -14,11 +14,11 @@ from app.ml.churn_model import (
     train_and_compare_models,
 )
 from app.ml.features import compute_features
-from app.models.audit import ModelMetric, ModelStatus, ModelVersion
-from app.models.business import Business
-from app.models.customer import Customer
-from app.models.prediction import Prediction, RiskLevel
-from app.models.sale import Sale
+from app.models.ia import VersionModelo, ModelMetric
+from app.models.empresa import Empresa
+from app.models.cliente import Cliente
+from app.models.ia import Prediccion
+from app.models.ventas import Venta
 
 ARTIFACTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "ml_artifacts")
 os.makedirs(ARTIFACTS_DIR, exist_ok=True)

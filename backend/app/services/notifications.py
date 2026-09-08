@@ -16,8 +16,8 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.models.campaign import Communication
-from app.models.customer import Channel, Customer
+from app.models.campanas import Comunicacion
+from app.models.cliente import Cliente
 
 
 class NotificationProvider(ABC):

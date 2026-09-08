@@ -6,8 +6,8 @@ from sqlalchemy.orm import Session
 from app.core.audit import log_action
 from app.core.deps import get_current_user
 from app.db.session import get_db
-from app.models.audit import Import, ImportRowError, ImportStatus
-from app.models.business import User
+from app.models.auditoria import Import, ImportError
+from app.models.empresa import Usuario
 from app.schemas.misc import ImportPreviewRequest, ImportSummaryOut
 from app.services.importing import validate_rows
 

@@ -3,12 +3,12 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models.business import Business
-from app.models.campaign import Campaign, CampaignStatus
-from app.models.customer import ActivityStatus, Customer
-from app.models.prediction import Prediction, RiskLevel
-from app.models.product import Product
-from app.models.sale import Sale, SaleItem
+from app.models.empresa import Empresa
+from app.models.campanas import Campaign
+from app.models.cliente import Cliente
+from app.models.ia import Prediccion
+from app.models.comercio import Producto
+from app.models.ventas import Venta, VentaItem
 
 
 def compute_dashboard_metrics(db: Session, business: Business) -> dict:

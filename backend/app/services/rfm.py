@@ -3,8 +3,8 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models.customer import ActivityStatus, Customer, CustomerSegment, CustomerValue
-from app.models.sale import Sale
+from app.models.cliente import Cliente
+from app.models.ventas import Venta
 
 
 def _quintile(value: float, thresholds: list[float]) -> int:

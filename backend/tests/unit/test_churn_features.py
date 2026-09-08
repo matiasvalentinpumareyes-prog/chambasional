@@ -51,7 +51,7 @@ def test_features_recency_is_not_always_zero_in_training_set():
 def test_probabilities_and_scores_are_within_valid_ranges():
     """Sección 59: las predicciones deben estar siempre entre 0 y 1 (o 0-100 para el score)."""
     from app.services.churn import _percentile_score, _rule_based_probability
-    from app.models.customer import Customer
+    from app.models.cliente import Cliente
 
     customer = Customer(
         business_id="b1", first_name="T", last_name="C",

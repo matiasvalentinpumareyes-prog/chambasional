@@ -1,8 +1,8 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models.customer import Customer
-from app.models.prediction import Prediction
+from app.models.cliente import Cliente
+from app.models.ia import Prediccion
 from app.schemas.customer import ChurnOut, CustomerOut, NextPurchaseOut, RFMOut
 
 

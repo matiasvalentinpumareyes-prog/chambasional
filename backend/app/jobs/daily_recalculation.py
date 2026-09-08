@@ -24,8 +24,8 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 
 from app.db.session import SessionLocal
-from app.models.business import Business
-from app.models.customer import Customer
+from app.models.empresa import Empresa
+from app.models.cliente import Cliente
 from app.services.churn import predict_churn_batch, train_churn_model
 from app.services.rfm import recalculate_customer_aggregates
 

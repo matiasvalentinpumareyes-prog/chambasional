@@ -1,4 +1,4 @@
-from app.models.audit import ImportType
+from app.models.auditoria import Import
 
 
 def test_validate_customers_rejects_missing_required_fields(db_session):

@@ -6,8 +6,8 @@ from app.core.audit import log_action
 from app.core.deps import get_current_user
 from app.core.errors import NotFoundError
 from app.db.session import get_db
-from app.models.business import User
-from app.models.campaign import Campaign
+from app.models.empresa import Usuario
+from app.models.campanas import Campaign
 from app.schemas.campaign import CampaignCreate, CampaignOut, CampaignStatusUpdate, SimulationResult
 from app.schemas.common import Paginated
 from app.services.campaigns import activate_campaign, compute_campaign_metrics, create_campaign_with_recipients, simulate_campaign

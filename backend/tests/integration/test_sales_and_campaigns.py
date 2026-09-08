@@ -16,7 +16,7 @@ def test_create_sale_updates_customer_metrics_immediately(client, auth_headers, 
 
 
 def test_create_sale_fails_for_inactive_product(client, auth_headers, sample_customer, db_session, business):
-    from app.models.product import Product, ProductStatus
+    from app.models.comercio import Producto
 
     inactive = Product(business_id=business.id, sku="INACTIVE-1", name="Descontinuado", price=10, status=ProductStatus.inactive)
     db_session.add(inactive)

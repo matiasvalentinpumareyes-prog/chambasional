@@ -3,11 +3,11 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models.business import Business
-from app.models.campaign import Communication
-from app.models.customer import Customer, CustomerValue
-from app.models.prediction import Prediction, Recommendation, RiskLevel, Strategy
-from app.models.product import Product
+from app.models.empresa import Empresa
+from app.models.campanas import Comunicacion
+from app.models.cliente import Cliente
+from app.models.ia import Prediccion; from app.models.marketing import Recomendacion
+from app.models.comercio import Producto
 
 CONFIDENCE_THRESHOLD = 0.3  # sección 75: no recomendar acciones agresivas con baja confianza
 

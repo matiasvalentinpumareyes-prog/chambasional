@@ -12,9 +12,9 @@ import app.models  # noqa: F401 registra todos los modelos
 from app.core.security import create_access_token, hash_password
 from app.db.session import Base, get_db
 from app.main import app
-from app.models.business import Business, User, UserRole
-from app.models.customer import Channel, Customer
-from app.models.product import Category, Product, ProductStatus
+from app.models.empresa import Empresa, Usuario, UsuarioPersonal
+from app.models.cliente import Cliente
+from app.models.comercio import Categoria, Producto
 
 TEST_DATABASE_URL = os.environ["DATABASE_URL"]
 engine = create_engine(TEST_DATABASE_URL)

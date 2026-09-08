@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import require_admin
 from app.db.session import get_db
-from app.models.audit import ModelVersion
-from app.models.business import User
+from app.models.ia import VersionModelo as ModelVersion
+from app.models.empresa import Usuario
 from app.schemas.misc import ModelMetricOut, ModelVersionOut
 from app.services.churn import train_churn_model
 
