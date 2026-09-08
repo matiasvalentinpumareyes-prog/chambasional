@@ -1,7 +1,18 @@
+"""Tabla principal producto — controla catálogo comercial.
+
+Tablas:
+  categorias (cat_id, emp_id, cat_nombre)
+  producto_marca (prd_marca_id, emp_id, prd_marca_nombre)
+  producto (prd_id, emp_id, cat_id, prd_marca_id, prd_sku, prd_codbarra, prd_nombre)
+  producto_precios (prd_precios_id, emp_id, prd_id, prd_precios, fecha_inicio/fin)
+
+Separado de stock para control independiente de inventario.
+Referencia: database_postgres.sql:227-305
+"""
 import uuid
 from datetime import datetime
 
-from sqlalchemy import String, Text, SmallInteger, Integer, Numeric, ForeignKey, UniqueConstraint, ForeignKeyConstraint
+from sqlalchemy import String, Text, SmallInteger, Numeric, ForeignKey, UniqueConstraint, ForeignKeyConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
@@ -70,11 +81,6 @@ class Producto(Base, TimestampMixin):
     categoria: Mapped["Categoria | None"] = relationship(foreign_keys="[Producto.emp_id, Producto.cat_id]", overlaps="empresa")
     marca: Mapped["ProductoMarca | None"] = relationship(foreign_keys="[Producto.emp_id, Producto.prd_marca_id]", overlaps="categoria,empresa")
 
-    @property
-    def margin_pct(self) -> float | None:
-        # No se persiste; cálculo a partir de precio vigente (producto_precios) si se desea.
-        return None
-
 
 class ProductoPrecio(Base, TimestampMixin):
     __tablename__ = "producto_precios"
@@ -99,24 +105,3 @@ class ProductoPrecio(Base, TimestampMixin):
     updated_by: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     producto: Mapped["Producto"] = relationship(foreign_keys="[ProductoPrecio.emp_id, ProductoPrecio.prd_id]")
-
-
-class ProductoStock(Base, TimestampMixin):
-    __tablename__ = "producto_stock"
-    __table_args__ = (
-        UniqueConstraint("emp_id", "prd_id", name="uq_producto_stock_producto"),
-        UniqueConstraint("emp_id", "stock_id", name="uq_producto_stock_id"),
-        ForeignKeyConstraint(["emp_id", "prd_id"], ["producto.emp_id", "producto.prd_id"], name="fk_producto_stock_producto"),
-    )
-
-    stock_id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
-    emp_id: Mapped[str] = mapped_column(String(36), nullable=False)
-    prd_id: Mapped[str] = mapped_column(String(36), nullable=False)
-    stk_cantidad: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False, default=0)
-    stk_min: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    stk_max: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    estado: Mapped[int] = mapped_column(SmallInteger, default=1, nullable=False)
-    created_by: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    updated_by: Mapped[str | None] = mapped_column(String(100), nullable=True)
-
-    producto: Mapped["Producto"] = relationship(foreign_keys="[ProductoStock.emp_id, ProductoStock.prd_id]")

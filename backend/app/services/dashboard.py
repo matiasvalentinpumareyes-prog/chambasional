@@ -7,7 +7,7 @@ from app.models.empresa import Empresa
 from app.models.campanas import Campaign
 from app.models.cliente import Cliente
 from app.models.ia import Prediccion
-from app.models.comercio import Producto
+from app.models.producto import Producto
 from app.models.ventas import Venta, VentaItem
 
 

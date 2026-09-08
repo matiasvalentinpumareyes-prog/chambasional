@@ -7,7 +7,7 @@ from app.models.empresa import Empresa
 from app.models.campanas import Comunicacion
 from app.models.cliente import Cliente
 from app.models.ia import Prediccion; from app.models.marketing import Recomendacion
-from app.models.comercio import Producto
+from app.models.producto import Producto
 
 CONFIDENCE_THRESHOLD = 0.3  # sección 75: no recomendar acciones agresivas con baja confianza
 

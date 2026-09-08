@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.models.cliente import Cliente
 from app.models.marketing import Recomendacion
-from app.models.comercio import Producto
+from app.models.producto import Producto
 from app.models.ventas import Venta, VentaItem
 
 MODEL_VERSION = "rules-v1-fallback"

@@ -300,3 +300,37 @@ class PrediccionExplicacionOut(PrediccionExplicacionBase):
     direccion_nombre: str | None = None
 
     model_config = {"from_attributes": True}
+
+
+# ---------------------------------------------------------------------------
+# DTOs computados (no tablas) — RFM/Churn/NextPurchase, antes en customer.py
+# ---------------------------------------------------------------------------
+
+class RFMOut(BaseModel):
+    recencia_dias: int | None = Field(None, ge=0)
+    frecuencia_30d: int = Field(default=0)
+    recencia_dias_calc: int | None = None
+    r: int = Field(default=1, ge=1, le=5)
+    f: int = Field(default=1, ge=1, le=5)
+    m: int = Field(default=1, ge=1, le=5)
+    recency_days: int | None = Field(None, description="Alias recencia_dias")
+    frequency: int | None = None
+    monetary: float | None = None
+    @property
+    def rfm_score(self) -> str:
+        return f"{self.r}{self.f}{self.m}"
+    model_config = {"from_attributes": True, "populate_by_name": True}
+
+class ChurnOut(BaseModel):
+    cli_id: str = Field(..., description="cliente.cli_id")
+    pdc_prob_abandono: float | None = Field(None, ge=0, le=1, description="predicciones.pdc_prob_abandono")
+    churn_probability: float | None = Field(None, ge=0, le=1, description="Alias pdc_prob_abandono")
+    pdc_fecha: datetime | None = None
+    prediction_date: datetime | None = None
+    model_config = {"from_attributes": True, "populate_by_name": True, "protected_namespaces": ()}
+
+class NextPurchaseOut(BaseModel):
+    expected_next_purchase_date: datetime | None = None
+    days_until_expected_purchase: int | None = None
+    purchase_probability: float | None = None
+    model_config = {"from_attributes": True}

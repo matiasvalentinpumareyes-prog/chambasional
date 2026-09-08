@@ -8,11 +8,12 @@ from app.api.pagination import PageParams
 from app.core.deps import get_current_user
 from app.core.errors import ConflictError, NotFoundError
 from app.db.session import get_db
-from app.models.comercio import Categoria, Producto, ProductoPrecio, ProductoStock
+from app.models.producto import Categoria, Producto, ProductoPrecio
+from app.models.stock import ProductoStock
 from app.models.empresa import Usuario
 from app.repositories.producto_repo import ProductoRepository
 from app.repositories.stock_repo import StockRepository
-from app.schemas.comercio import ProductoCreate, ProductoOut, ProductoUpdate
+from app.schemas.producto import ProductoCreate, ProductoOut, ProductoUpdate
 from app.schemas.common import Paginated
 
 router = APIRouter(prefix="/products", tags=["products"])
@@ -32,7 +33,7 @@ def _to_out(db: Session, producto: Producto) -> ProductoOut:
         if cat:
             cat_nombre = cat.cat_nombre
     if producto.prd_marca_id:
-        from app.models.comercio import ProductoMarca
+        from app.models.producto import ProductoMarca
         marca = db.scalar(select(ProductoMarca).where(ProductoMarca.emp_id == producto.emp_id, ProductoMarca.prd_marca_id == producto.prd_marca_id))
         if marca:
             marca_nombre = marca.prd_marca_nombre

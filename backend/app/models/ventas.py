@@ -56,4 +56,4 @@ class VentaItem(Base, TimestampMixin):
     updated_by: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     venta: Mapped["Venta"] = relationship(back_populates="items", foreign_keys="[VentaItem.emp_id, VentaItem.venta_id]")
-    producto: Mapped["app.models.comercio.Producto"] = relationship(foreign_keys="[VentaItem.emp_id, VentaItem.prd_id]", overlaps="venta,items")
+    producto: Mapped["app.models.producto.Producto"] = relationship(foreign_keys="[VentaItem.emp_id, VentaItem.prd_id]", overlaps="venta,items")

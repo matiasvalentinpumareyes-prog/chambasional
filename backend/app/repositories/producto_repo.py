@@ -3,7 +3,8 @@ from __future__ import annotations
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.models.comercio import Categoria, Producto, ProductoMarca, ProductoPrecio, ProductoStock
+from app.models.producto import Categoria, Producto, ProductoMarca, ProductoPrecio
+from app.models.stock import ProductoStock
 
 
 class ProductoRepository:

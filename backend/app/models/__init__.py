@@ -9,7 +9,8 @@ from app.models.catalogs import (
     CanalMarketing, Segmento, Rol, AuditoriaEntidad, AuditoriaAccion, PatronCompra,
 )
 from app.models.empresa import Empresa, UsuarioPersonal, Usuario
-from app.models.comercio import Categoria, ProductoMarca, Producto, ProductoPrecio, ProductoStock
+from app.models.producto import Categoria, ProductoMarca, Producto, ProductoPrecio
+from app.models.stock import ProductoStock
 from app.models.cliente import (
     Cliente, ClienteConsentimiento, ClienteSegmento, ClienteSegmentoHistorial,
     ClienteFeatures, ClienteEstacionalidad, TipoDireccionExplicacion, PrediccionExplicacion,

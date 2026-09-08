@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.errors import AppError
-from app.models.comercio import ProductoStock
+from app.models.stock import ProductoStock
 
 
 class StockRepository:

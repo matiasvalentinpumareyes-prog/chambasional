@@ -133,3 +133,18 @@ class ImportCompletoOut(ImportDBOut):
     errors: list[ImportErrorDBOut] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}
+
+
+# ---------------------------------------------------------------------------
+# DTOs compatibilidad (antes en misc.py) — preview import
+# ---------------------------------------------------------------------------
+
+class ImportPreviewRequest(BaseModel):
+    file_name: str = Field(..., max_length=255)
+    file_type: str = Field(..., max_length=50, description="clientes|productos|ventas")
+    rows: list[dict[str, str]] = Field(default_factory=list)
+    model_config = {"from_attributes": True}
+
+# Alias legacy para imports que aún usan misc
+ImportSummaryOut = ImportCompletoOut
+ImportErrorOut = ImportErrorDBOut

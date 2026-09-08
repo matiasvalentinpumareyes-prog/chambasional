@@ -8,7 +8,7 @@ from app.core.errors import NotFoundError
 from app.db.session import get_db
 from app.models.empresa import Usuario
 from app.repositories.stock_repo import StockRepository
-from app.schemas.comercio import ProductoStockCreate, ProductoStockMovimiento, ProductoStockOut, ProductoStockUpdate
+from app.schemas.stock import ProductoStockCreate, ProductoStockMovimiento, ProductoStockOut, ProductoStockUpdate
 
 router = APIRouter(prefix="/stock", tags=["stock"])
 
@@ -46,7 +46,7 @@ def list_stock(
         o = _to_out(s)
         # resolver nombre producto
         from sqlalchemy import select
-        from app.models.comercio import Producto
+        from app.models.producto import Producto
         prod = db.scalar(select(Producto).where(Producto.emp_id == s.emp_id, Producto.prd_id == s.prd_id))
         if prod:
             o.prd_nombre = prod.prd_nombre
@@ -63,7 +63,7 @@ def get_stock(prd_id: str, db: Session = Depends(get_db), usuario: Usuario = Dep
         raise NotFoundError("STOCK_NOT_FOUND", "Stock no encontrado para este producto. Crea primero el producto.")
     out = _to_out(stock)
     from sqlalchemy import select
-    from app.models.comercio import Producto
+    from app.models.producto import Producto
     prod = db.scalar(select(Producto).where(Producto.emp_id == usuario.emp_id, Producto.prd_id == prd_id))
     if prod:
         out.prd_nombre = prod.prd_nombre
@@ -76,7 +76,7 @@ def create_stock(payload: ProductoStockCreate, db: Session = Depends(get_db), us
     # Forzar emp_id del token
     payload.emp_id = usuario.emp_id
     repo = StockRepository(db)
-    from app.models.comercio import ProductoStock
+    from app.models.producto import ProductoStock
     stock = ProductoStock(
         emp_id=payload.emp_id,
         prd_id=payload.prd_id,
@@ -120,7 +120,7 @@ def alertas_bajo_minimo(db: Session = Depends(get_db), usuario: Usuario = Depend
     for s in items:
         o = _to_out(s)
         from sqlalchemy import select
-        from app.models.comercio import Producto
+        from app.models.producto import Producto
         prod = db.scalar(select(Producto).where(Producto.emp_id == s.emp_id, Producto.prd_id == s.prd_id))
         if prod:
             o.prd_nombre = prod.prd_nombre

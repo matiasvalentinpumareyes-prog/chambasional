@@ -59,7 +59,7 @@ def today_actions(limit: int = Query(default=20, ge=1, le=100), db: Session = De
 
         product_name = ""
         if strategy.recommended_product_id:
-            from app.models.comercio import Producto
+            from app.models.producto import Producto
             product = db.get(Product, strategy.recommended_product_id)
             product_name = product.name if product else ""
 

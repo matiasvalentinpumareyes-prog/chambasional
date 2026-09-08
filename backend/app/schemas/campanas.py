@@ -172,3 +172,25 @@ class ComunicacionOut(ComunicacionBase):
     campana_nombre: str | None = None
 
     model_config = {"from_attributes": True}
+
+
+# ---------------------------------------------------------------------------
+# DTOs compatibilidad (antes en campaign.py shim)
+# ---------------------------------------------------------------------------
+
+class CampaignStatusUpdate(BaseModel):
+    estado: int = Field(default=3, description="campaigns.estado SMALLINT 1/2/3")
+    model_config = {"from_attributes": True}
+
+class SimulationResult(BaseModel):
+    targeted: int = 0
+    estimated_conversion_rate: float = 0
+    estimated_converted: int = 0
+    estimated_recovered_revenue: float = 0
+    estimated_cost: float = 0
+    estimated_roi: float | None = None
+    is_simulation: bool = True
+    model_config = {"from_attributes": True}
+
+# Alias legacy
+CampaignStatusUpdateLegacy = CampaignStatusUpdate

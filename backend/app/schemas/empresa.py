@@ -173,3 +173,32 @@ class UsuarioOut(UsuarioBase):
     model_config = {"from_attributes": True}
 
 
+# ---------------------------------------------------------------------------
+# Configuración empresa (antes BusinessSettings en misc.py) — no tabla, DTO
+# ---------------------------------------------------------------------------
+
+class DiscountRule(BaseModel):
+    seg_codigo: str = Field(..., description="segmentos.seg_codigo")
+    max_descuento_pct: float = Field(..., ge=0, le=100)
+    model_config = {"from_attributes": True}
+
+class EmpresaSettingsOut(BaseModel):
+    emp_id: str = Field(..., description="empresa.emp_id")
+    emp_nombre_comercial: str = Field(..., description="empresa.emp_nombre_comercial")
+    emp_email: str | None = None
+    estado: int
+    created_at: datetime | None = None
+    model_config = {"from_attributes": True}
+
+class EmpresaSettingsUpdate(BaseModel):
+    emp_nombre_comercial: str | None = Field(None, max_length=255)
+    emp_email: str | None = None
+    emp_direccion: str | None = None
+    estado: int | None = None
+    model_config = {"from_attributes": True}
+
+# Alias legacy para compatibilidad (BusinessSettings -> EmpresaSettings)
+BusinessSettingsOut = EmpresaSettingsOut
+BusinessSettingsUpdate = EmpresaSettingsUpdate
+
+

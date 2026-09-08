@@ -7,7 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.errors import AppError
-from app.models.comercio import Producto
+from app.models.producto import Producto
 from app.models.ventas import Venta, VentaItem
 from app.models.cliente import Cliente
 from app.repositories.stock_repo import StockRepository
@@ -96,7 +96,7 @@ class VentaRepository:
             # Precio: si no viene precio_unitario, buscar en producto_precios vigente (fecha_fin IS NULL)
             precio_unitario = it.get("precio_unitario")
             if precio_unitario is None:
-                from app.models.comercio import ProductoPrecio
+                from app.models.producto import ProductoPrecio
                 precio_row = self.db.scalar(select(ProductoPrecio).where(ProductoPrecio.emp_id == emp_id, ProductoPrecio.prd_id == prd_id, ProductoPrecio.fecha_fin.is_(None), ProductoPrecio.estado == 1))
                 precio_unitario = Decimal(precio_row.prd_precios) if precio_row else Decimal("0.00")
             else:

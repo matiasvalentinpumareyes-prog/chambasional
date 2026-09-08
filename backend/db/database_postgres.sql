@@ -240,6 +240,26 @@ cat_id UUID NOT NULL PRIMARY KEY DEFAULT (uuid_generate_v1mc()),
         FOREIGN KEY (emp_id) REFERENCES empresa(emp_id)
 );
 
+CREATE TABLE subcategorias (
+subcat_id UUID NOT NULL PRIMARY KEY DEFAULT (uuid_generate_v1mc()),
+    emp_id UUID NOT NULL,
+    cat_id UUID NOT NULL,
+    subcat_nombre VARCHAR(100) NOT NULL,
+    subcat_descripcion TEXT NULL,
+    estado SMALLINT NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(100) NULL,
+    updated_by VARCHAR(100) NULL,
+    CONSTRAINT uq_subcategoria_cat_nombre UNIQUE (cat_id, subcat_nombre),
+    CONSTRAINT uq_subcategoria_emp_id UNIQUE (emp_id, subcat_id),
+    CONSTRAINT uq_subcategoria_emp_cat_id UNIQUE (emp_id, cat_id, subcat_id),
+    CONSTRAINT fk_subcategoria_empresa
+        FOREIGN KEY (emp_id) REFERENCES empresa(emp_id),
+    CONSTRAINT fk_subcategoria_categoria
+        FOREIGN KEY (emp_id, cat_id) REFERENCES categorias(emp_id, cat_id)
+);
+
 CREATE TABLE producto_marca (
 prd_marca_id UUID NOT NULL PRIMARY KEY DEFAULT (uuid_generate_v1mc()),
     emp_id UUID NOT NULL,
@@ -259,6 +279,7 @@ CREATE TABLE producto (
 prd_id UUID NOT NULL PRIMARY KEY DEFAULT (uuid_generate_v1mc()),
     emp_id UUID NOT NULL,
     cat_id UUID NULL,
+    subcat_id UUID NULL,
     prd_marca_id UUID NULL,
     prd_sku VARCHAR(100) NULL,
     prd_codbarra VARCHAR(100) NULL,
@@ -277,8 +298,12 @@ prd_id UUID NOT NULL PRIMARY KEY DEFAULT (uuid_generate_v1mc()),
         FOREIGN KEY (emp_id) REFERENCES empresa(emp_id),
     CONSTRAINT fk_producto_categoria
         FOREIGN KEY (emp_id, cat_id) REFERENCES categorias(emp_id, cat_id),
+    CONSTRAINT fk_producto_subcategoria
+        FOREIGN KEY (emp_id, cat_id, subcat_id) REFERENCES subcategorias(emp_id, cat_id, subcat_id),
     CONSTRAINT fk_producto_marca
-        FOREIGN KEY (emp_id, prd_marca_id) REFERENCES producto_marca(emp_id, prd_marca_id)
+        FOREIGN KEY (emp_id, prd_marca_id) REFERENCES producto_marca(emp_id, prd_marca_id),
+    CONSTRAINT chk_producto_subcat_requiere_cat
+        CHECK (subcat_id IS NULL OR cat_id IS NOT NULL)
 );
 
 CREATE TABLE producto_precios (
@@ -1066,9 +1091,12 @@ CREATE INDEX idx_usuario_emp ON usuario (emp_id);
 CREATE INDEX idx_usuario_rol ON usuario (rol_id);
 CREATE INDEX idx_usuario_personal ON usuario (emp_id, usp_id);
 CREATE INDEX idx_categoria_emp ON categorias (emp_id);
+CREATE INDEX idx_subcategoria_emp ON subcategorias (emp_id);
+CREATE INDEX idx_subcategoria_categoria ON subcategorias (emp_id, cat_id);
 CREATE INDEX idx_marca_emp ON producto_marca (emp_id);
 CREATE INDEX idx_producto_emp ON producto (emp_id);
 CREATE INDEX idx_producto_categoria ON producto (emp_id, cat_id);
+CREATE INDEX idx_producto_subcategoria ON producto (emp_id, cat_id, subcat_id);
 CREATE INDEX idx_producto_marca ON producto (emp_id, prd_marca_id);
 CREATE INDEX idx_producto_precio_producto ON producto_precios (emp_id, prd_id);
 CREATE INDEX idx_producto_precio_vigencia ON producto_precios (emp_id, prd_id, fecha_inicio, fecha_fin);
@@ -1193,6 +1221,11 @@ EXECUTE FUNCTION set_updated_at();
 
 CREATE TRIGGER trg_categorias_updated_at
 BEFORE UPDATE ON categorias
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER trg_subcategorias_updated_at
+BEFORE UPDATE ON subcategorias
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
 

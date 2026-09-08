@@ -11,7 +11,7 @@ from app.core.errors import NotFoundError
 from app.db.session import get_db
 from app.models.cliente import Cliente
 from app.models.empresa import Usuario
-from app.models.comercio import Producto
+from app.models.producto import Producto
 from app.repositories.cliente_repo import ClienteRepository
 from app.repositories.venta_repo import VentaRepository
 from pydantic import BaseModel, Field
