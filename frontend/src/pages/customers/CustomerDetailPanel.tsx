@@ -27,20 +27,26 @@ export function CustomerDetailPanel({ customer, onClose }: { customer: Customer;
         <div className="p-5 space-y-6">
           {/* Estado general */}
           <div className="flex flex-wrap gap-2">
-            <Badge tone="neutral">{SEGMENT_LABEL[customer.segment]}</Badge>
-            <Badge tone={customer.activityStatus === "active" ? "success" : "neutral"}>{ACTIVITY_LABEL[customer.activityStatus]}</Badge>
+            <Badge tone="neutral">{customer.segment ? (SEGMENT_LABEL[customer.segment as keyof typeof SEGMENT_LABEL] ?? customer.segment) : "—"}</Badge>
+            <Badge tone={customer.activityStatus === "active" ? "success" : "neutral"}>{customer.activityStatus ? (ACTIVITY_LABEL[customer.activityStatus as keyof typeof ACTIVITY_LABEL] ?? customer.activityStatus) : "—"}</Badge>
             {customer.churn && <Badge tone={customer.churn.riskLevel === "low" ? "success" : customer.churn.riskLevel}>Riesgo {RISK_LABEL[customer.churn.riskLevel]}</Badge>}
             <Badge tone={customer.consent ? "success" : "neutral"}>{customer.consent ? "Con consentimiento" : "Sin consentimiento"}</Badge>
           </div>
 
           {/* RFM */}
           <Section title="RFM">
-            <div className="grid grid-cols-3 gap-3 text-center">
-              <MiniStat label="Recencia" value={`${customer.rfm.recencyDays} días`} />
-              <MiniStat label="Frecuencia" value={String(customer.rfm.frequency)} />
-              <MiniStat label="Monetario" value={formatMoney(customer.rfm.monetary)} />
-            </div>
-            <p className="text-[12.5px] text-muted mt-2">RFM Score: <span className="font-mono text-ink">{customer.rfm.rfmScore}</span></p>
+            {customer.rfm ? (
+              <>
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <MiniStat label="Recencia" value={`${customer.rfm.recencyDays} días`} />
+                  <MiniStat label="Frecuencia" value={String(customer.rfm.frequency)} />
+                  <MiniStat label="Monetario" value={formatMoney(customer.rfm.monetary)} />
+                </div>
+                <p className="text-[12.5px] text-muted mt-2">RFM Score: <span className="font-mono text-ink">{customer.rfm.rfmScore}</span></p>
+              </>
+            ) : (
+              <p className="text-[13px] text-muted">— Sin datos RFM todavía</p>
+            )}
           </Section>
 
           {/* Churn y explicación (sección 16) */}

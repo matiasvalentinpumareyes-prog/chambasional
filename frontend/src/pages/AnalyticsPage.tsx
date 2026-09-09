@@ -54,12 +54,12 @@ export function AnalyticsPage() {
   function exportCustomers() {
     const rows = (customers.data?.items ?? []).map((c) => ({
       cliente: `${c.firstName} ${c.lastName}`,
-      segmento: c.segment,
+      segmento: c.segment ?? "—",
       gasto_total: c.totalSpend,
       frecuencia: c.purchaseCount,
-      ultima_compra: c.lastPurchaseAt ?? "",
+      ultima_compra: c.lastPurchaseAt ?? "—",
     }));
-    downloadCsv("clientes.csv", rows);
+    downloadCsv("clientes.csv", rows as any);
   }
 
   const isLoading = series.isLoading || atRisk.isLoading || campaigns.isLoading;

@@ -21,8 +21,8 @@ export function CustomersPage() {
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["customers", page, search, segment],
-    queryFn: () => customersApi.list({ page, pageSize: PAGE_SIZE, search, filters: { segment: segment || undefined }, sortBy: "totalSpend", sortDir: "desc" }),
+    queryKey: ["customers", page, search],
+    queryFn: () => customersApi.list({ page, pageSize: PAGE_SIZE, search }),
   });
 
   const deactivateMutation = useMutation({
@@ -85,8 +85,8 @@ export function CustomersPage() {
                       <p className="font-medium text-ink">{c.firstName} {c.lastName}</p>
                       <p className="text-[12px] text-muted">{c.email ?? "Sin email"}</p>
                     </td>
-                    <td className="px-4 py-2.5"><Badge tone="neutral">{SEGMENT_LABEL[c.segment]}</Badge></td>
-                    <td className="px-4 py-2.5">{ACTIVITY_LABEL[c.activityStatus]}</td>
+                    <td className="px-4 py-2.5"><Badge tone="neutral">{c.segment ? SEGMENT_LABEL[c.segment as keyof typeof SEGMENT_LABEL] ?? c.segment : "—"}</Badge></td>
+                    <td className="px-4 py-2.5">{c.activityStatus ? ACTIVITY_LABEL[c.activityStatus as keyof typeof ACTIVITY_LABEL] ?? c.activityStatus : "—"}</td>
                     <td className="px-4 py-2.5">
                       {c.churn ? <Badge tone={c.churn.riskLevel === "low" ? "success" : c.churn.riskLevel}>{RISK_LABEL[c.churn.riskLevel]}</Badge> : <span className="text-muted">—</span>}
                     </td>

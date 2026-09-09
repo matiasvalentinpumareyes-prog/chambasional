@@ -108,9 +108,8 @@ function NewSaleModal({ open, onClose }: { open: boolean; onClose: () => void })
       salesApi.create({
         customerId: values.customerId,
         channel: values.channel,
-        paymentMethod: values.paymentMethod,
         items: values.items.filter((i) => i.productId).map((i) => ({ productId: i.productId, quantity: Number(i.quantity) })),
-      }),
+      } as any),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sales"] });
       queryClient.invalidateQueries({ queryKey: ["customers"] });

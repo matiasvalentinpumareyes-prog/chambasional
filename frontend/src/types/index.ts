@@ -48,11 +48,11 @@ export interface Customer {
   totalSpend: number; // moneda: siempre en unidades decimales, nunca float impreciso en backend real
   avgTicket: number;
   avgIntervalDays: number | null; // intervalo promedio individual entre compras
-  segment: CustomerSegment;
-  customerValue: CustomerValue;
-  rfm: RFMScore;
+  segment: CustomerSegment | null; // null -> UI muestra —
+  customerValue: CustomerValue | null;
+  rfm: RFMScore | null;
   churn: ChurnPrediction | null;
-  activityStatus: CustomerActivityStatus;
+  activityStatus: CustomerActivityStatus | null;
   nextPurchase: NextPurchasePrediction | null;
 }
 

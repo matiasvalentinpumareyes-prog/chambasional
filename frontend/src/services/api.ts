@@ -13,6 +13,7 @@ import type {
   Sale,
   BusinessSettings,
 } from "@/types";
+import { usuarioOutToAuthUser, clienteOutToCustomer, clientePaginatedToCustomer } from "@/lib/mappers";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000/api";
 
@@ -34,19 +35,7 @@ async function realFetch<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 // ---------------- Auth ----------------
-
-function usuarioOutToAuthUser(u: any): AuthUser {
-  // Backend UsuarioOut (ES) -> Frontend AuthUser (EN)
-  // Mantiene emp_id 0471cf4c... para datos existentes
-  return {
-    id: u.usu_id,
-    name: u.usp_nombres ?? u.usu_usuario ?? u.usu_email,
-    email: u.usu_email,
-    role: (u.rol_codigo === "SUPERADMIN" || u.rol_codigo === "ADMIN_EMPRESA" ? "admin" : "business_user") as AuthUser["role"],
-    businessId: u.emp_id,
-    businessName: u.emp_nombre_comercial ?? "",
-  };
-}
+// mapper importado desde @/lib/mappers para mantener emp_id 0471cf4c... y RUC/DNI handling centralizado
 
 export const authApi = {
   login: async (email: string, _password: string): Promise<AuthUser> => {
@@ -120,33 +109,50 @@ export const dashboardApi = {
 
 export const customersApi = {
   list: async (opts: { page?: number; pageSize?: number; search?: string; [k: string]: any }): Promise<Paginated<Customer>> => {
-    const qs = new URLSearchParams(opts as any).toString();
-    return realFetch<Paginated<Customer>>(`/clientes?${qs}`);
+    // Mapear pageSize -> page_size que espera backend pagination.py:10, ignorar filtros no soportados
+    const params: Record<string, string> = {};
+    if (opts.page) params.page = String(opts.page);
+    if (opts.pageSize) params.page_size = String(opts.pageSize);
+    if (opts.search) params.search = opts.search;
+    // Soportar doc_id/estado si vienen en opts, para RUC/DNI filtro futuro
+    if (opts.doc_id) params.doc_id = String(opts.doc_id);
+    if (opts.estado !== undefined) params.estado = String(opts.estado);
+    const qs = new URLSearchParams(params).toString();
+    const raw = await realFetch<any>(`/clientes?${qs}`);
+    return clientePaginatedToCustomer(raw);
   },
   get: async (id: string): Promise<Customer | null> => {
-    return realFetch<Customer | null>(`/clientes/${id}`);
+    const raw = await realFetch<any>(`/clientes/${id}`);
+    return raw ? clienteOutToCustomer(raw) : null;
   },
-  create: async (input: Partial<Customer>): Promise<Customer> => {
-    // Adaptar frontend EN -> backend ES (cli_nombre_razon_social, cli_email, doc_id)
+  create: async (input: Partial<Customer> & { doc_id?: string; cli_ndocumento?: string }): Promise<Customer> => {
+    // Adaptar EN -> ES, manejando RUC/DNI ambos (doc_id + cli_ndocumento requeridos)
+    const nombre = `${input.firstName ?? ""} ${input.lastName ?? ""}`.trim() || (input as any).cli_nombre_razon_social || "—";
     const payload: any = {
-      cli_nombre_razon_social: `${input.firstName ?? ""} ${input.lastName ?? ""}`.trim(),
-      cli_email: input.email,
-      cli_celular: input.phone,
+      cli_nombre_razon_social: nombre,
+      cli_email: input.email ?? null,
+      cli_celular: input.phone ?? null,
       doc_id: (input as any).doc_id,
       cli_ndocumento: (input as any).cli_ndocumento,
+      cli_direccion: (input as any).cli_direccion ?? (input as any).city ?? null,
     };
-    return realFetch<Customer>(`/clientes`, { method: "POST", body: JSON.stringify(payload) });
+    const raw = await realFetch<any>(`/clientes`, { method: "POST", body: JSON.stringify(payload) });
+    return clienteOutToCustomer(raw);
   },
-  update: async (id: string, patch: Partial<Customer>): Promise<Customer | null> => {
-    const payload: any = {
-      cli_nombre_razon_social: patch.firstName && patch.lastName ? `${patch.firstName} ${patch.lastName}` : undefined,
-      cli_email: patch.email,
-      cli_celular: patch.phone,
-    };
-    return realFetch<Customer | null>(`/clientes/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+  update: async (id: string, patch: Partial<Customer> & { doc_id?: string; cli_ndocumento?: string }): Promise<Customer | null> => {
+    const payload: any = {};
+    if (patch.firstName || patch.lastName) payload.cli_nombre_razon_social = `${patch.firstName ?? ""} ${patch.lastName ?? ""}`.trim();
+    if (patch.email !== undefined) payload.cli_email = patch.email;
+    if (patch.phone !== undefined) payload.cli_celular = patch.phone;
+    if ((patch as any).doc_id) payload.doc_id = (patch as any).doc_id;
+    if ((patch as any).cli_ndocumento) payload.cli_ndocumento = (patch as any).cli_ndocumento;
+    if ((patch as any).cli_direccion) payload.cli_direccion = (patch as any).cli_direccion;
+    const raw = await realFetch<any>(`/clientes/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+    return raw ? clienteOutToCustomer(raw) : null;
   },
   deactivate: async (id: string): Promise<Customer | null> => {
-    return realFetch<Customer | null>(`/clientes/${id}`, { method: "DELETE" });
+    const raw = await realFetch<any>(`/clientes/${id}`, { method: "DELETE" });
+    return raw ? clienteOutToCustomer(raw) : null;
   },
   sales: async (id: string): Promise<Sale[]> => {
     return realFetch<Sale[]>(`/ventas?cli_id=${id}`);
@@ -248,6 +254,7 @@ export const catalogsApi = {
   metodosPago: async (): Promise<{ mtp_id: string; mtp_nombre: string }[]> => realFetch(`/catalogos/metodos-pago`),
   canales: async (): Promise<{ can_id: string; can_codigo: string }[]> => realFetch(`/catalogos/canales`),
   segmentos: async (): Promise<any[]> => realFetch(`/catalogos/segmentos`),
+  documentos: async (): Promise<{ doc_id: string; doc_tipo: string; doc_descripcion: string }[]> => realFetch(`/catalogos/documentos`),
   subcategorias: async (cat_id?: string): Promise<any[]> => {
     const qs = cat_id ? `?cat_id=${cat_id}` : "";
     return realFetch(`/subcategorias${qs}`);
