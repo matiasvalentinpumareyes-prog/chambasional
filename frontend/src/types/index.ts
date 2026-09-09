@@ -54,6 +54,9 @@ export interface Customer {
   churn: ChurnPrediction | null;
   activityStatus: CustomerActivityStatus | null;
   nextPurchase: NextPurchasePrediction | null;
+  // Campos crudos para RUC/DNI (doc_id + ndocumento) — se mantienen para crear/editar sin hardcode
+  doc_id?: string | null;
+  cli_ndocumento?: string | null;
 }
 
 export interface RFMScore {

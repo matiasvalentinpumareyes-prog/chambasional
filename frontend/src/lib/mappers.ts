@@ -25,14 +25,13 @@ export function mapPaginated<T, R>(raw: { items: T[]; page: number; page_size: n
 
 // ClienteOut (ES) -> Customer (EN)
 // Muestra "—" en UI para nulls hasta conseguir datos reales (Fase 5)
+// Preserva doc_id/cli_ndocumento para RUC/DNI en ambos lados sin hardcode
 export function clienteOutToCustomer(c: any): Customer {
   const nombre = (c.cli_nombre_razon_social ?? "").trim();
   const parts = nombre.split(/\s+/).filter(Boolean);
   const firstName = parts[0] ?? "—";
   const lastName = parts.slice(1).join(" ") || "—";
-  // segment puede venir como segmento_actual o null
   const segRaw = c.segmento_actual ?? c.segment ?? null;
-  // Normalizar segmentos ES -> EN del frontend si hace falta, si no, dejar null y UI muestra —
   const segmentMap: Record<string, string> = {
     NUEVO: "new",
     ACTIVO: "loyal",
@@ -50,12 +49,12 @@ export function clienteOutToCustomer(c: any): Customer {
     lastName,
     email: c.cli_email ?? null,
     phone: c.cli_celular ?? null,
-    city: c.cli_direccion ?? null, // direccion como fallback temporal
+    city: c.cli_direccion ?? null,
     registeredAt: c.created_at ?? new Date().toISOString(),
     preferredChannel: "internal",
     consent: false,
     status: c.estado === 1 ? "active" : "inactive",
-    lastPurchaseAt: null, // hasta tener ventas
+    lastPurchaseAt: null,
     purchaseCount: 0,
     totalSpend: 0,
     avgTicket: 0,
@@ -66,6 +65,8 @@ export function clienteOutToCustomer(c: any): Customer {
     churn: null,
     activityStatus: "active" as any,
     nextPurchase: null,
+    doc_id: c.doc_id ?? null,
+    cli_ndocumento: c.cli_ndocumento ?? null,
   };
 }
 
