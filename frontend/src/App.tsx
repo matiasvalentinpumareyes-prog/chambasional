@@ -15,6 +15,10 @@ import { AnalyticsPage } from "@/pages/AnalyticsPage";
 import { ModelsPage } from "@/pages/ModelsPage";
 import { ImportsPage } from "@/pages/ImportsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
+import { EmpresaPage } from "@/pages/config/EmpresaPage";
+import { UsuariosPage } from "@/pages/config/UsuariosPage";
+import { RolesPage } from "@/pages/config/RolesPage";
+import { PerfilPage } from "@/pages/config/PerfilPage";
 
 export default function App() {
   return (
@@ -36,10 +40,10 @@ export default function App() {
           <Route path="/modelos" element={<ProtectedRoute><ModelsPage /></ProtectedRoute>} />
           <Route path="/importaciones" element={<ProtectedRoute><ImportsPage /></ProtectedRoute>} />
           <Route path="/configuracion" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-          <Route path="/configuracion/empresa" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-          <Route path="/configuracion/usuarios" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-          <Route path="/configuracion/roles" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-          <Route path="/configuracion/perfil" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+          <Route path="/configuracion/empresa" element={<ProtectedRoute><EmpresaPage /></ProtectedRoute>} />
+          <Route path="/configuracion/usuarios" element={<ProtectedRoute><UsuariosPage /></ProtectedRoute>} />
+          <Route path="/configuracion/roles" element={<ProtectedRoute><RolesPage /></ProtectedRoute>} />
+          <Route path="/configuracion/perfil" element={<ProtectedRoute><PerfilPage /></ProtectedRoute>} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
