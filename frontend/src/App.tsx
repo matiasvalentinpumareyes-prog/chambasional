@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { LoginPage } from "@/pages/LoginPage";
+import { RegisterPage } from "@/pages/RegisterPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { TodayActionsPage } from "@/pages/TodayActionsPage";
 import { CustomersPage } from "@/pages/CustomersPage";
@@ -26,6 +27,7 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
           <Route path="/hoy" element={<ProtectedRoute><TodayActionsPage /></ProtectedRoute>} />
           <Route path="/clientes" element={<ProtectedRoute><CustomersPage /></ProtectedRoute>} />

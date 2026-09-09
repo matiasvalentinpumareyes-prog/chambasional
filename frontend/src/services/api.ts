@@ -35,28 +35,69 @@ async function realFetch<T>(path: string, options?: RequestInit): Promise<T> {
 
 // ---------------- Auth ----------------
 
+function usuarioOutToAuthUser(u: any): AuthUser {
+  // Backend UsuarioOut (ES) -> Frontend AuthUser (EN)
+  // Mantiene emp_id 0471cf4c... para datos existentes
+  return {
+    id: u.usu_id,
+    name: u.usp_nombres ?? u.usu_usuario ?? u.usu_email,
+    email: u.usu_email,
+    role: (u.rol_codigo === "SUPERADMIN" || u.rol_codigo === "ADMIN_EMPRESA" ? "admin" : "business_user") as AuthUser["role"],
+    businessId: u.emp_id,
+    businessName: u.emp_nombre_comercial ?? "",
+  };
+}
+
 export const authApi = {
   login: async (email: string, _password: string): Promise<AuthUser> => {
-    const data = await realFetch<{ token: string; user: AuthUser }>("/auth/login", {
+    const data = await realFetch<{ token: string; user: any }>("/auth/login", {
       method: "POST",
       body: JSON.stringify({ usu_email: email, password: _password }),
     });
+    const mapped = usuarioOutToAuthUser(data.user);
     localStorage.setItem("auth_token", data.token);
-    localStorage.setItem("auth_user", JSON.stringify(data.user));
-    return data.user;
+    localStorage.setItem("auth_user", JSON.stringify(mapped));
+    // Guardar raw para debug si hace falta
+    localStorage.setItem("auth_user_raw", JSON.stringify(data.user));
+    return mapped;
   },
-  register: async (payload: { emp_ruc: string; emp_razon_social: string; emp_nombre_comercial: string; usu_usuario: string; usu_email: string; password: string; usp_nombres: string }): Promise<AuthUser> => {
-    const data = await realFetch<{ token: string; user: AuthUser }>("/auth/register", {
+  register: async (payload: {
+    emp_ruc: string;
+    emp_razon_social: string;
+    emp_nombre_comercial: string;
+    emp_email?: string;
+    usp_nombres: string;
+    usp_dni?: string;
+    usu_usuario: string;
+    usu_email: string;
+    password: string;
+    rol_codigo?: string;
+  }): Promise<AuthUser> => {
+    const data = await realFetch<{ token: string; user: any }>("/auth/register", {
       method: "POST",
       body: JSON.stringify(payload),
     });
+    const mapped = usuarioOutToAuthUser(data.user);
     localStorage.setItem("auth_token", data.token);
-    localStorage.setItem("auth_user", JSON.stringify(data.user));
-    return data.user;
+    localStorage.setItem("auth_user", JSON.stringify(mapped));
+    localStorage.setItem("auth_user_raw", JSON.stringify(data.user));
+    return mapped;
+  },
+  me: async (): Promise<AuthUser | null> => {
+    try {
+      const raw = await realFetch<any>("/auth/me");
+      const mapped = usuarioOutToAuthUser(raw);
+      localStorage.setItem("auth_user", JSON.stringify(mapped));
+      localStorage.setItem("auth_user_raw", JSON.stringify(raw));
+      return mapped;
+    } catch {
+      return null;
+    }
   },
   logout: () => {
     localStorage.removeItem("auth_token");
     localStorage.removeItem("auth_user");
+    localStorage.removeItem("auth_user_raw");
   },
   currentUser: (): AuthUser | null => {
     const raw = localStorage.getItem("auth_user");

@@ -7,7 +7,7 @@ import { Button, Input, Label } from "@/components/ui/Primitives";
 export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("admin@demo.com");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,8 +19,8 @@ export function LoginPage() {
     try {
       await login(email, password);
       navigate("/");
-    } catch {
-      setError("No pudimos iniciar sesión. Verifica tus credenciales.");
+    } catch (err: any) {
+      setError(err?.message ?? "No pudimos iniciar sesión. Verifica tus credenciales.");
     } finally {
       setLoading(false);
     }
@@ -40,7 +40,7 @@ export function LoginPage() {
         </div>
         <div className="bg-surface border border-border rounded shadow-panel p-6">
           <h2 className="font-display font-semibold text-[17px] mb-1">Inicia sesión</h2>
-          <p className="text-[13px] text-muted mb-5">Modo demo: cualquier contraseña funciona.</p>
+          <p className="text-[13px] text-muted mb-5">Accede con tu cuenta registrada.</p>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label>Correo electrónico</Label>
@@ -55,6 +55,10 @@ export function LoginPage() {
               {loading ? "Ingresando..." : "Ingresar"}
             </Button>
           </form>
+          <p className="text-[13px] text-center mt-4">
+            <span className="text-muted">¿No tienes cuenta? </span>
+            <a href="/register" className="text-brand-dark font-medium hover:underline">Regístrate</a>
+          </p>
         </div>
         <p className="text-[12px] text-muted text-center mt-5">
           Sistema de Marketing Predictivo y Recuperación Automática de Clientes
