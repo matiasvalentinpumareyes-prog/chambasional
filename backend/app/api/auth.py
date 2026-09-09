@@ -37,15 +37,16 @@ def _usuario_out(usuario: Usuario) -> UsuarioOut:
     emp_nombre = empresa.emp_nombre_comercial if empresa else ""
     emp_ruc = empresa.emp_ruc if empresa else None
     # persona nombres: buscar via DB si necesario (evita N+1, se hace en caller)
+    # Convertir UUID a str para Pydantic (evita TypeError: UUID not JSON serializable)
     return UsuarioOut(
-        usu_id=usuario.usu_id,
-        emp_id=usuario.emp_id,
+        usu_id=str(usuario.usu_id) if usuario.usu_id else None,
+        emp_id=str(usuario.emp_id) if usuario.emp_id else None,
         usu_usuario=usuario.usu_usuario,
         usu_email=usuario.usu_email,
-        rol_id=usuario.rol_id,
+        rol_id=str(usuario.rol_id) if usuario.rol_id else None,
         rol_codigo=rol_codigo,
         rol_nombre=rol_nombre,
-        usp_id=usuario.usp_id,
+        usp_id=str(usuario.usp_id) if usuario.usp_id else None,
         usp_nombres=None,  # se resuelve en get_current_user si se necesita
         emp_nombre_comercial=emp_nombre,
         emp_ruc=emp_ruc,

@@ -20,9 +20,19 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def create_access_token(subject: str, extra_claims: dict[str, Any] | None = None) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode: dict[str, Any] = {"sub": subject, "exp": expire}
+    # Convertir UUID a str para que json.dumps no falle (TypeError: UUID not JSON serializable)
+    def _stringify(v: Any) -> Any:
+        try:
+            import uuid
+            if isinstance(v, uuid.UUID):
+                return str(v)
+        except Exception:
+            pass
+        return v
+
+    to_encode: dict[str, Any] = {"sub": _stringify(subject), "exp": expire}
     if extra_claims:
-        to_encode.update(extra_claims)
+        to_encode.update({k: _stringify(v) for k, v in extra_claims.items()})
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 

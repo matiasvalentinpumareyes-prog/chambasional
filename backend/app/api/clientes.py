@@ -21,8 +21,8 @@ router_legacy = APIRouter(prefix="/customers", tags=["customers"])
 
 def _to_out(cliente: Cliente) -> ClienteOut:
     return ClienteOut(
-        emp_id=cliente.emp_id,
-        doc_id=cliente.doc_id,
+        emp_id=str(cliente.emp_id) if cliente.emp_id else None,
+        doc_id=str(cliente.doc_id) if cliente.doc_id else None,
         cli_ndocumento=cliente.cli_ndocumento,
         cli_nombre_razon_social=cliente.cli_nombre_razon_social,
         cli_direccion=cliente.cli_direccion,
@@ -30,10 +30,10 @@ def _to_out(cliente: Cliente) -> ClienteOut:
         cli_celular=cliente.cli_celular,
         cli_birthday=cliente.cli_birthday,
         cli_genero=cliente.cli_genero,
-        dep_id=cliente.dep_id,
-        prv_id=cliente.prv_id,
-        dis_id=cliente.dis_id,
-        cli_id=cliente.cli_id,
+        dep_id=str(cliente.dep_id) if cliente.dep_id else None,
+        prv_id=str(cliente.prv_id) if cliente.prv_id else None,
+        dis_id=str(cliente.dis_id) if cliente.dis_id else None,
+        cli_id=str(cliente.cli_id) if cliente.cli_id else None,
         estado=cliente.estado,
         created_at=cliente.created_at,
         updated_at=cliente.updated_at,
