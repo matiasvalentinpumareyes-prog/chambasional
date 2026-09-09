@@ -83,7 +83,7 @@ export function CustomersPage() {
                   <tr key={c.id} className="hover:bg-ink/[0.02] cursor-pointer" onClick={() => setSelected(c)}>
                     <td className="px-4 py-2.5">
                       <p className="font-medium text-ink">{c.firstName} {c.lastName}</p>
-                      <p className="text-[12px] text-muted">{c.email ?? "Sin email"}</p>
+                      <p className="text-[12px] text-muted">{c.email ?? "—"}</p>
                     </td>
                     <td className="px-4 py-2.5"><Badge tone="neutral">{c.segment ? SEGMENT_LABEL[c.segment as keyof typeof SEGMENT_LABEL] ?? c.segment : "—"}</Badge></td>
                     <td className="px-4 py-2.5">{c.activityStatus ? ACTIVITY_LABEL[c.activityStatus as keyof typeof ACTIVITY_LABEL] ?? c.activityStatus : "—"}</td>
@@ -91,7 +91,7 @@ export function CustomersPage() {
                       {c.churn ? <Badge tone={c.churn.riskLevel === "low" ? "success" : c.churn.riskLevel}>{RISK_LABEL[c.churn.riskLevel]}</Badge> : <span className="text-muted">—</span>}
                     </td>
                     <td className="px-4 py-2.5 text-muted">{formatDate(c.lastPurchaseAt)}</td>
-                    <td className="px-4 py-2.5 text-right font-medium">{formatMoney(c.totalSpend)}</td>
+                    <td className="px-4 py-2.5 text-right font-medium">{c.totalSpend ? formatMoney(c.totalSpend) : "—"}</td>
                     <td className="px-4 py-2.5 text-right">
                       <button
                         onClick={(e) => { e.stopPropagation(); setEditing(c); setFormOpen(true); }}

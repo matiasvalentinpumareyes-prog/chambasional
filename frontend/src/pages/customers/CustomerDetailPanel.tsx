@@ -17,7 +17,7 @@ export function CustomerDetailPanel({ customer, onClose }: { customer: Customer;
         <div className="sticky top-0 bg-surface border-b border-border px-5 py-4 flex items-center justify-between">
           <div>
             <h3 className="font-display font-semibold text-[16px]">{customer.firstName} {customer.lastName}</h3>
-            <p className="text-[12.5px] text-muted">{customer.email ?? "Sin email"} · {customer.city ?? "Ciudad no registrada"}</p>
+            <p className="text-[12.5px] text-muted">{customer.email ?? "—"} · {customer.city ?? "—"} · {customer.cli_ndocumento ?? "—"} ({customer.doc_id ? "doc" : "—"})</p>
           </div>
           <button onClick={onClose} className="text-muted hover:text-ink p-1.5 rounded hover:bg-ink/5">
             <X size={18} />
