@@ -23,11 +23,11 @@ router = APIRouter(prefix="/subcategorias", tags=["subcategorias"])
 
 def _to_out(sub: Subcategoria, cat_nombre: str | None = None) -> SubcategoriaOut:
     return SubcategoriaOut(
-        emp_id=sub.emp_id,
-        cat_id=sub.cat_id,
+        emp_id=str(sub.emp_id) if sub.emp_id else None,
+        cat_id=str(sub.cat_id) if sub.cat_id else None,
         subcat_nombre=sub.subcat_nombre,
         subcat_descripcion=sub.subcat_descripcion,
-        subcat_id=sub.subcat_id,
+        subcat_id=str(sub.subcat_id) if sub.subcat_id else None,
         estado=sub.estado,
         created_at=sub.created_at,
         updated_at=sub.updated_at,
@@ -45,6 +45,14 @@ def list_subcategorias(
 ):
     stmt = select(Subcategoria).where(Subcategoria.emp_id == usuario.emp_id)
     if cat_id:
+        # Validar UUID para no lanzar 500 si cat_id es "xxx"
+        try:
+            import uuid
+
+            uuid.UUID(cat_id)
+        except Exception:
+            # cat_id inválido -> retornar vacío en vez de 500
+            return Paginated(items=[], page=page_params.page, page_size=page_params.page_size, total=0)
         stmt = stmt.where(Subcategoria.cat_id == cat_id)
     if search:
         from sqlalchemy import func

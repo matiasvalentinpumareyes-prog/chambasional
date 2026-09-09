@@ -6,11 +6,10 @@ import { Button, Input, Label, Spinner } from "@/components/ui/Primitives";
 import { Modal } from "@/components/ui/Modal";
 
 export function CategoriesPage() {
-  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [cat_nombre, setCatNombre] = useState("");
 
-  const { data: categorias, isLoading } = useQuery({
+  const { data: categorias, isLoading, isError, error } = useQuery({
     queryKey: ["categorias"],
     queryFn: categoriasApi.list,
   });
@@ -25,6 +24,8 @@ export function CategoriesPage() {
           <div className="flex items-center gap-2 py-8 justify-center text-muted">
             <Spinner /> Cargando...
           </div>
+        ) : isError ? (
+          <div className="py-8 text-center text-risk-critical text-[13px]">Error al cargar categorías: {(error as Error)?.message ?? "—"}</div>
         ) : (
           <ul className="divide-y divide-border">
             {categorias?.map((c) => (
@@ -32,7 +33,7 @@ export function CategoriesPage() {
                 {c}
               </li>
             ))}
-            {(!categorias || categorias.length === 0) && <li className="py-8 text-center text-muted">Sin categorías</li>}
+            {(!categorias || categorias.length === 0) && <li className="py-8 text-center text-muted">Sin categorías — crea una al crear un producto</li>}
           </ul>
         )}
       </div>
@@ -55,7 +56,7 @@ export function SubcategoriasPage() {
   const [cat_id, setCatId] = useState("");
   const [subcat_nombre, setSubcatNombre] = useState("");
 
-  const { data: subcategorias, isLoading, refetch } = useQuery({
+  const { data: subcategorias, isLoading, isError, error } = useQuery({
     queryKey: ["subcategorias", cat_id],
     queryFn: () => catalogsApi.subcategorias(cat_id || undefined),
   });
@@ -83,15 +84,21 @@ export function SubcategoriasPage() {
           <div className="flex justify-center py-8 text-muted">
             <Spinner />
           </div>
+        ) : isError ? (
+          <div className="py-8 text-center text-risk-critical text-[13px]">Error al cargar: {(error as Error)?.message ?? "—"}</div>
         ) : (
           <ul className="divide-y divide-border">
             {subcategorias?.map((s: any) => (
               <li key={s.subcat_id} className="py-2.5 text-[13.5px] flex justify-between">
-                <span>{s.subcat_nombre}</span>
-                <span className="text-muted text-xs">{s.subcat_id.slice(0, 8)}… cat_id {s.cat_id.slice(0, 8)}…</span>
+                <span>{s.subcat_nombre ?? "—"}</span>
+                <span className="text-muted text-xs">{s.subcat_id ? s.subcat_id.slice(0, 8) : "—"}… cat_id {s.cat_id ? s.cat_id.slice(0, 8) : "—"}… {s.categoria_nombre ? `· ${s.categoria_nombre}` : ""}</span>
               </li>
             ))}
-            {(!subcategorias || subcategorias.length === 0) && <li className="py-8 text-center text-muted">Sin subcategorías para este cat_id</li>}
+            {(!subcategorias || subcategorias.length === 0) && (
+              <li className="py-8 text-center text-muted">
+                {cat_id ? "Sin subcategorías para este cat_id — verifica que el cat_id sea un UUID válido" : "Sin subcategorías — crea una categoría y luego una subcategoría"}
+              </li>
+            )}
           </ul>
         )}
       </div>

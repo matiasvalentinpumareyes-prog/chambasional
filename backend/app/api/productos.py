@@ -57,15 +57,15 @@ def _to_out(db: Session, producto: Producto) -> ProductoOut:
     stk_cantidad = stock.stk_cantidad if stock else None
 
     return ProductoOut(
-        emp_id=producto.emp_id,
-        cat_id=producto.cat_id,
-        subcat_id=producto.subcat_id,
-        prd_marca_id=producto.prd_marca_id,
+        emp_id=str(producto.emp_id) if producto.emp_id else None,
+        cat_id=str(producto.cat_id) if producto.cat_id else None,
+        subcat_id=str(producto.subcat_id) if producto.subcat_id else None,
+        prd_marca_id=str(producto.prd_marca_id) if producto.prd_marca_id else None,
         prd_sku=producto.prd_sku,
         prd_codbarra=producto.prd_codbarra,
         prd_nombre=producto.prd_nombre,
         prd_descripcion=producto.prd_descripcion,
-        prd_id=producto.prd_id,
+        prd_id=str(producto.prd_id) if producto.prd_id else None,
         estado=producto.estado,
         created_at=producto.created_at,
         updated_at=producto.updated_at,

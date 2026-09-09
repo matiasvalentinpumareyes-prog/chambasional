@@ -267,7 +267,11 @@ export const catalogsApi = {
   roles: async (): Promise<any[]> => realFetch(`/roles`),
   subcategorias: async (cat_id?: string): Promise<any[]> => {
     const qs = cat_id ? `?cat_id=${cat_id}` : "";
-    return realFetch(`/subcategorias${qs}`);
+    const raw = await realFetch<any>(`/subcategorias${qs}`);
+    // Backend devuelve Paginated {items, total} desde subcategorias.py:38, no array directo
+    if (raw && Array.isArray(raw.items)) return raw.items;
+    if (Array.isArray(raw)) return raw;
+    return [];
   },
   createSubcategoria: async (payload: { cat_id: string; subcat_nombre: string }): Promise<any> =>
     realFetch(`/subcategorias`, { method: "POST", body: JSON.stringify(payload) }),
