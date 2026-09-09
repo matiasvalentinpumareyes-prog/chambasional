@@ -1,17 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Panel, Spinner } from "@/components/ui/Primitives";
+import { rolesApi } from "@/services/api";
 
 export function RolesPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["roles"],
-    queryFn: async () => {
-      const res = await fetch(`${import.meta.env.VITE_API_URL ?? "http://localhost:8000/api"}/roles`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("auth_token") ?? ""}` },
-      });
-      if (!res.ok) throw new Error("Error");
-      return res.json() as Promise<any[]>;
-    },
+    queryFn: rolesApi.list,
   });
 
   return (

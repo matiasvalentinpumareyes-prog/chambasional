@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { catalogsApi } from "@/services/api";
+import { catalogsApi, categoriasApi } from "@/services/api";
 import { Button, Input, Label, Spinner } from "@/components/ui/Primitives";
 import { Modal } from "@/components/ui/Modal";
 
@@ -12,24 +12,7 @@ export function CategoriesPage() {
 
   const { data: categorias, isLoading } = useQuery({
     queryKey: ["categorias"],
-    queryFn: async () => {
-      // Usa endpoint existente /products/categorias para categorías, y /catalogos para subcategorias
-      const res = await fetch(`${import.meta.env.VITE_API_URL ?? "http://localhost:8000/api"}/products/categorias`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("auth_token") ?? ""}` },
-      });
-      if (!res.ok) return [];
-      return res.json() as Promise<string[]>;
-    },
-  });
-
-  const mutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(`${import.meta.env.VITE_API_URL ?? "http://localhost:8000/api"}/catalogos/subcategorias`, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${localStorage.getItem("auth_token") ?? ""}` },
-      });
-      return res.json();
-    },
+    queryFn: categoriasApi.list,
   });
 
   return (
@@ -79,15 +62,7 @@ export function SubcategoriasPage() {
 
   const queryClient = useQueryClient();
   const mutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(`${import.meta.env.VITE_API_URL ?? "http://localhost:8000/api"}/subcategorias`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("auth_token") ?? ""}` },
-        body: JSON.stringify({ cat_id, subcat_nombre }),
-      });
-      if (!res.ok) throw new Error("Error");
-      return res.json();
-    },
+    mutationFn: () => catalogsApi.createSubcategoria({ cat_id, subcat_nombre }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["subcategorias"] });
       setSubcatNombre("");

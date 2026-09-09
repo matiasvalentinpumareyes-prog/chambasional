@@ -28,8 +28,17 @@ async function realFetch<T>(path: string, options?: RequestInit): Promise<T> {
     },
   });
   if (!res.ok) {
+    // Interceptor 401: token expirado o inválido -> logout y redirect a /login
+    if (res.status === 401) {
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("auth_user");
+      localStorage.removeItem("auth_user_raw");
+      if (window.location.pathname !== "/login" && window.location.pathname !== "/register") {
+        window.location.href = "/login";
+      }
+    }
     const body = await res.json().catch(() => null);
-    throw new Error(body?.error?.message ?? `Error de red (${res.status})`);
+    throw new Error(body?.error?.message ?? body?.detail ?? `Error de red (${res.status})`);
   }
   return res.json();
 }
@@ -255,10 +264,34 @@ export const catalogsApi = {
   canales: async (): Promise<{ can_id: string; can_codigo: string }[]> => realFetch(`/catalogos/canales`),
   segmentos: async (): Promise<any[]> => realFetch(`/catalogos/segmentos`),
   documentos: async (): Promise<{ doc_id: string; doc_tipo: string; doc_descripcion: string }[]> => realFetch(`/catalogos/documentos`),
+  roles: async (): Promise<any[]> => realFetch(`/roles`),
   subcategorias: async (cat_id?: string): Promise<any[]> => {
     const qs = cat_id ? `?cat_id=${cat_id}` : "";
     return realFetch(`/subcategorias${qs}`);
   },
+  createSubcategoria: async (payload: { cat_id: string; subcat_nombre: string }): Promise<any> =>
+    realFetch(`/subcategorias`, { method: "POST", body: JSON.stringify(payload) }),
+};
+
+// ---------------- Usuarios / Roles / Perfil (centralizado, sin fetch manual) ----------------
+
+export const usuariosApi = {
+  list: async (): Promise<any[]> => realFetch(`/usuarios`),
+  create: async (payload: { usu_usuario: string; usu_email: string; password: string; rol_id?: string; usp_nombres?: string }): Promise<any> =>
+    realFetch(`/usuarios`, { method: "POST", body: JSON.stringify(payload) }),
+};
+
+export const rolesApi = {
+  list: async (): Promise<any[]> => realFetch(`/roles`),
+};
+
+export const perfilApi = {
+  get: async (): Promise<any> => realFetch(`/usuarios/me/personal`),
+  update: async (payload: any): Promise<any> => realFetch(`/usuarios/me/personal`, { method: "PUT", body: JSON.stringify(payload) }),
+};
+
+export const categoriasApi = {
+  list: async (): Promise<string[]> => realFetch(`/products/categorias`),
 };
 
 // ---------------- Importaciones ----------------

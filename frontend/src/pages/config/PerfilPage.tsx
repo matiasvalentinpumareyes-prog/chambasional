@@ -2,17 +2,12 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button, Input, Label, Panel, Spinner } from "@/components/ui/Primitives";
+import { perfilApi } from "@/services/api";
 
 export function PerfilPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["mi-perfil"],
-    queryFn: async () => {
-      const res = await fetch(`${import.meta.env.VITE_API_URL ?? "http://localhost:8000/api"}/usuarios/me/personal`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("auth_token") ?? ""}` },
-      });
-      if (!res.ok) throw new Error("Error");
-      return res.json() as Promise<any>;
-    },
+    queryFn: perfilApi.get,
   });
   const [form, setForm] = useState<any>({});
   useEffect(() => {
@@ -20,15 +15,7 @@ export function PerfilPage() {
   }, [data]);
 
   const mutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(`${import.meta.env.VITE_API_URL ?? "http://localhost:8000/api"}/usuarios/me/personal`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("auth_token") ?? ""}` },
-        body: JSON.stringify(form),
-      });
-      if (!res.ok) throw new Error("Error");
-      return res.json();
-    },
+    mutationFn: () => perfilApi.update(form),
   });
 
   if (isLoading) {

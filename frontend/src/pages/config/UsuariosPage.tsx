@@ -1,41 +1,19 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Badge, Button, Input, Label, Panel, Select, Spinner } from "@/components/ui/Primitives";
+import { rolesApi, usuariosApi } from "@/services/api";
 
 export function UsuariosPage() {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["usuarios"],
-    queryFn: async () => {
-      const res = await fetch(`${import.meta.env.VITE_API_URL ?? "http://localhost:8000/api"}/usuarios`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("auth_token") ?? ""}` },
-      });
-      if (!res.ok) throw new Error("Error");
-      return res.json() as Promise<any[]>;
-    },
+    queryFn: usuariosApi.list,
   });
+  const { data: roles } = useQuery({ queryKey: ["roles-usuarios"], queryFn: rolesApi.list });
   const [form, setForm] = useState({ usu_usuario: "", usu_email: "", password: "", rol_id: "", usp_nombres: "" });
-  const [roles, setRoles] = useState<any[]>([]);
-
-  useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL ?? "http://localhost:8000/api"}/roles`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("auth_token") ?? ""}` },
-    })
-      .then((r) => r.json())
-      .then(setRoles)
-      .catch(() => {});
-  }, []);
 
   const create = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(`${import.meta.env.VITE_API_URL ?? "http://localhost:8000/api"}/usuarios`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("auth_token") ?? ""}` },
-        body: JSON.stringify({ ...form, emp_id: "ignored" }),
-      });
-      if (!res.ok) throw new Error((await res.json()).error?.message ?? "Error");
-      return res.json();
-    },
+    mutationFn: () => usuariosApi.create(form),
     onSuccess: () => refetch(),
   });
 
@@ -89,7 +67,7 @@ export function UsuariosPage() {
                 <Label>rol</Label>
                 <Select value={form.rol_id} onChange={(e) => setForm({ ...form, rol_id: e.target.value })} className="w-full">
                   <option value="">Sin rol</option>
-                  {roles.map((r) => (
+                  {roles?.map((r) => (
                     <option key={r.rol_id} value={r.rol_id}>
                       {r.rol_codigo} — {r.rol_nombre}
                     </option>
