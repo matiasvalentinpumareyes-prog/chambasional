@@ -379,13 +379,34 @@ export const modelsApi = {
 };
 
 // ---------------- Configuración ----------------
+export type EmpresaSettingsRaw = {
+  emp_id: string;
+  emp_ruc: string;
+  emp_razon_social: string;
+  emp_nombre_comercial: string;
+  emp_direccion?: string | null;
+  emp_lema?: string | null;
+  emp_email?: string | null;
+  emp_celular1?: string | null;
+  emp_celular2?: string | null;
+  emp_telefono1?: string | null;
+  emp_telefono2?: string | null;
+  emp_nro_cuenta1?: string | null;
+  emp_nro_cuenta2?: string | null;
+  dep_id?: string | null;
+  prv_id?: string | null;
+  dis_id?: string | null;
+  estado: number;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
 
 export const settingsApi = {
-  get: async (): Promise<BusinessSettings> => {
-    return realFetch<BusinessSettings>(`/settings`);
+  get: async (): Promise<EmpresaSettingsRaw & Partial<BusinessSettings>> => {
+    return realFetch<EmpresaSettingsRaw & Partial<BusinessSettings>>(`/settings`);
   },
-  update: async (patch: any): Promise<BusinessSettings> => {
-    return realFetch<BusinessSettings>(`/settings`, { method: "PUT", body: JSON.stringify(patch) });
+  update: async (patch: any): Promise<EmpresaSettingsRaw & Partial<BusinessSettings>> => {
+    return realFetch<EmpresaSettingsRaw & Partial<BusinessSettings>>(`/settings`, { method: "PUT", body: JSON.stringify(patch) });
   },
 };
 
