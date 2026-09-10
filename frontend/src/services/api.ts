@@ -47,10 +47,23 @@ async function realFetch<T>(path: string, options?: RequestInit): Promise<T> {
 // mapper importado desde @/lib/mappers para mantener emp_id 0471cf4c... y RUC/DNI handling centralizado
 
 export const authApi = {
-  login: async (email: string, _password: string): Promise<AuthUser> => {
+  login: async (identifier: string, _password: string): Promise<AuthUser> => {
+    const id = identifier.trim();
+    const isEmail = id.includes("@");
+    const body: any = { password: _password };
+    // Envía en ambos campos + alias identifier para compatibilidad backend
+    // Backend hace OR sobre usu_email/usu_usuario/identifier
+    if (isEmail) {
+      body.usu_email = id;
+      body.usu_usuario = id;
+    } else {
+      body.usu_usuario = id;
+      body.usu_email = id;
+    }
+    body.identifier = id;
     const data = await realFetch<{ token: string; user: any }>("/auth/login", {
       method: "POST",
-      body: JSON.stringify({ usu_email: email, password: _password }),
+      body: JSON.stringify(body),
     });
     const mapped = usuarioOutToAuthUser(data.user);
     localStorage.setItem("auth_token", data.token);

@@ -7,7 +7,7 @@ import { Button, Input, Label } from "@/components/ui/Primitives";
 export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +17,7 @@ export function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      await login(email, password);
+      await login(identifier, password);
       navigate("/");
     } catch (err: any) {
       setError(err?.message ?? "No pudimos iniciar sesión. Verifica tus credenciales.");
@@ -43,8 +43,8 @@ export function LoginPage() {
           <p className="text-[13px] text-muted mb-5">Accede con tu cuenta registrada.</p>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label>Correo electrónico</Label>
-              <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tucorreo@negocio.com" />
+              <Label>Usuario o correo electrónico</Label>
+              <Input type="text" required value={identifier} onChange={(e) => setIdentifier(e.target.value)} placeholder="admin_demo o tucorreo@negocio.com" />
             </div>
             <div>
               <Label>Contraseña</Label>

@@ -25,14 +25,17 @@ class RegisterRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    """Login por emp_id + credenciales. Acepta usu_usuario o usu_email.
+    """Login por emp_id + credenciales. Acepta usu_usuario o usu_email (usuario o email).
 
     BD: usuario.usu_usuario / usuario.usu_email + usuario.usu_password_hash.
+    Frontend puede enviar el identificador en cualquier campo; el backend resuelve por OR.
     """
 
-    emp_id: str | None = Field(None, description="Opcional: empresa.emp_id para multi-tenant; si se omite se busca por email global")
+    emp_id: str | None = Field(None, description="Opcional: empresa.emp_id para multi-tenant; si se omite se busca global")
     usu_usuario: str | None = Field(None, max_length=100, description="usuario.usu_usuario")
-    usu_email: EmailStr | None = Field(None, description="usuario.usu_email")
+    usu_email: str | None = Field(None, max_length=150, description="usuario.usu_email o usu_usuario (acepta ambos)")
+    # Alias genérico para frontends que envían `identifier` / `usuario_o_email`
+    identifier: str | None = Field(None, max_length=150, description="Alias: usuario o email")
     password: str = Field(..., min_length=1, description="Contraseña en claro")
 
 

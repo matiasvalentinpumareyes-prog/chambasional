@@ -121,20 +121,49 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=TokenResponse)
 def login(payload: LoginRequest, db: Session = Depends(get_db)):
-    # Buscar usuario por usu_email o usu_usuario dentro de emp_id si se provee
-    usuario = None
-    if payload.usu_email:
+    # Acepta usuario O email en cualquier campo (usu_email, usu_usuario, identifier)
+    # Normaliza: el frontend puede enviar email o usuario en `usu_email`
+    raw = (payload.identifier or payload.usu_email or payload.usu_usuario or "").strip()
+    if not raw:
+        raise UnauthorizedError(message="Debe enviar usuario o email.")
+    # Resolver valor a buscar: intenta por ambos campos con OR (case-insensitive para email)
+    from sqlalchemy import or_
+
+    def _find_usuario(valor: str) -> Usuario | None:
+        # Búsqueda insensible a mayúsculas para email, exacta para usuario pero también prueba lower
+        val_lower = valor.lower()
         if payload.emp_id:
-            usuario = db.scalar(select(Usuario).where(Usuario.emp_id == payload.emp_id, Usuario.usu_email == payload.usu_email))
-        else:
-            usuario = db.scalar(select(Usuario).where(Usuario.usu_email == payload.usu_email))
-    elif payload.usu_usuario:
-        if payload.emp_id:
-            usuario = db.scalar(select(Usuario).where(Usuario.emp_id == payload.emp_id, Usuario.usu_usuario == payload.usu_usuario))
-        else:
-            usuario = db.scalar(select(Usuario).where(Usuario.usu_usuario == payload.usu_usuario))
-    else:
-        raise UnauthorizedError(message="Debe enviar usu_email o usu_usuario.")
+            return db.scalar(
+                select(Usuario).where(
+                    Usuario.emp_id == payload.emp_id,
+                    or_(
+                        Usuario.usu_email == valor,
+                        Usuario.usu_email.ilike(val_lower),
+                        Usuario.usu_usuario == valor,
+                        Usuario.usu_usuario.ilike(val_lower),
+                    ),
+                )
+            )
+        return db.scalar(
+            select(Usuario).where(
+                or_(
+                    Usuario.usu_email == valor,
+                    Usuario.usu_email.ilike(val_lower),
+                    Usuario.usu_usuario == valor,
+                    Usuario.usu_usuario.ilike(val_lower),
+                )
+            )
+        )
+
+    # Prioridad: si se enviaron ambos campos explícitos, busca por OR combinado
+    # Si solo uno, _find_usuario ya busca en ambos
+    usuario = _find_usuario(raw)
+    # Fallback: si raw era email pero también coincide usuario, ya lo cubre
+    # Si payload traía ambos distintos, prueba el segundo
+    if not usuario and payload.usu_usuario and payload.usu_email and payload.usu_usuario != raw and payload.usu_email != raw:
+        # intenta el otro campo
+        alt = payload.usu_usuario if raw == payload.usu_email else payload.usu_email
+        usuario = _find_usuario(alt.strip())
 
     if not usuario or not verify_password(payload.password, usuario.usu_password_hash):
         raise UnauthorizedError(message="Correo/usuario o contraseña incorrectos.")
