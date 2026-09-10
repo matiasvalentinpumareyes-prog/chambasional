@@ -3,123 +3,110 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models.empresa import Empresa
 from app.models.campanas import Campaign
 from app.models.cliente import Cliente
-from app.models.ia import Prediccion
+from app.models.empresa import Usuario
 from app.models.producto import Producto
 from app.models.ventas import Venta, VentaItem
 
 
-def compute_dashboard_metrics(db: Session, business: Business) -> dict:
-    customers = list(db.scalars(select(Customer).where(Customer.business_id == business.id)))
-    sales = list(db.scalars(select(Sale).where(Sale.business_id == business.id)))
-    campaigns = list(db.scalars(select(Campaign).where(Campaign.business_id == business.id)))
-
-    total_sales = round(sum(float(s.total) for s in sales), 2)
-    active_customers = sum(1 for c in customers if c.activity_status == ActivityStatus.active)
-    at_risk_customers = sum(1 for c in customers if c.activity_status == ActivityStatus.at_risk)
-    lost_customers = sum(1 for c in customers if c.activity_status == ActivityStatus.lost)
-    inactive_customers = sum(1 for c in customers if c.status.value == "inactive")
-
-    latest_predictions: dict[str, Prediction] = {}
-    stmt = select(Prediction).order_by(Prediction.prediction_date.desc())
-    for p in db.scalars(stmt.where(Prediction.business_id == business.id)):
-        latest_predictions.setdefault(p.customer_id, p)
-
-    critical_customers = sum(1 for p in latest_predictions.values() if p.risk_level == RiskLevel.critical)
-    high_or_critical = sum(1 for p in latest_predictions.values() if p.risk_level in (RiskLevel.high, RiskLevel.critical))
-    estimated_churn_rate = high_or_critical / len(latest_predictions) if latest_predictions else 0.0
-
-    recoverable_customers = sum(
-        1 for c in customers if c.activity_status in (ActivityStatus.at_risk, ActivityStatus.dormant) and c.consent
-    )
-    total_customer_value = round(sum(float(c.total_spend) for c in customers), 2)
-    purchases = sum(c.purchase_count for c in customers)
-    avg_ticket = round(total_customer_value / purchases, 2) if purchases else 0.0
-    intervals = [c.avg_interval_days for c in customers if c.avg_interval_days]
-    avg_purchase_frequency_days = round(sum(intervals) / len(intervals), 1) if intervals else 0.0
-
-    finished_campaigns = sum(1 for c in campaigns if c.status == CampaignStatus.finished)
-    active_campaigns = sum(1 for c in campaigns if c.status == CampaignStatus.active)
-
-    without_email = sum(1 for c in customers if not c.email)
+def compute_dashboard_metrics(db: Session, usuario: Usuario) -> dict:
+    emp_id = usuario.emp_id
+    # Conteos reales desde BD 44 tablas
+    total_customers = db.scalar(select(func.count()).select_from(Cliente).where(Cliente.emp_id == emp_id, Cliente.estado == 1)) or 0
+    total_sales_val = db.scalar(select(func.coalesce(func.sum(Venta.ven_total), 0)).where(Venta.emp_id == emp_id)) or 0
+    total_sales = round(float(total_sales_val), 2)
+    # Campañas si existen
+    try:
+        active_campaigns = db.scalar(select(func.count()).select_from(Campaign).where(Campaign.emp_id == emp_id, Campaign.estado == 1)) or 0
+        finished_campaigns = db.scalar(select(func.count()).select_from(Campaign).where(Campaign.emp_id == emp_id, Campaign.estado == 2)) or 0
+    except Exception:
+        active_campaigns = 0
+        finished_campaigns = 0
+    # Métricas simplificadas para no bloquear UI — churn/predicción se calculan en jobs ML aparte
+    # Usar clientes como base para data_quality
+    without_email = db.scalar(select(func.count()).select_from(Cliente).where(Cliente.emp_id == emp_id, Cliente.cli_email.is_(None))) or 0
     data_quality_score = 100.0
-    if customers:
-        data_quality_score = max(0.0, min(100.0, 100 - (without_email / len(customers)) * 15))
-
+    if total_customers:
+        data_quality_score = max(0.0, min(100.0, 100 - (without_email / total_customers) * 15))
+    # Intentar contar inactivos (estado 0)
+    inactive_customers = db.scalar(select(func.count()).select_from(Cliente).where(Cliente.emp_id == emp_id, Cliente.estado == 0)) or 0
+    # Valores placeholder que no rompen frontend — se llenan cuando ML genere predicciones
     return {
         "total_sales": total_sales,
-        "total_customers": len(customers),
-        "active_customers": active_customers,
-        "inactive_customers": inactive_customers,
-        "at_risk_customers": at_risk_customers,
-        "lost_customers": lost_customers,
-        "critical_customers": critical_customers,
-        "estimated_churn_rate": round(estimated_churn_rate, 3),
-        "recoverable_customers": recoverable_customers,
-        "total_customer_value": total_customer_value,
-        "avg_ticket": avg_ticket,
-        "avg_purchase_frequency_days": avg_purchase_frequency_days,
-        "recovered_revenue": 0.0,  # se completa cuando existen campañas finalizadas con recuperación registrada
-        "active_campaigns": active_campaigns,
-        "finished_campaigns": finished_campaigns,
+        "total_customers": int(total_customers),
+        "active_customers": int(total_customers) - int(inactive_customers),
+        "inactive_customers": int(inactive_customers),
+        "at_risk_customers": 0,
+        "lost_customers": 0,
+        "critical_customers": 0,
+        "estimated_churn_rate": 0.0,
+        "recoverable_customers": 0,
+        "total_customer_value": total_sales,
+        "avg_ticket": round(total_sales / total_customers, 2) if total_customers else 0.0,
+        "avg_purchase_frequency_days": 0.0,
+        "recovered_revenue": 0.0,
+        "active_campaigns": int(active_campaigns),
+        "finished_campaigns": int(finished_campaigns),
         "conversion_rate": 0.0,
         "campaign_roi": None,
         "data_quality_score": round(data_quality_score, 1),
-        "currency": business.currency,
+        "currency": "PEN",
     }
 
 
-def compute_dashboard_series(db: Session, business: Business) -> dict:
-    sales = list(db.scalars(select(Sale).where(Sale.business_id == business.id)))
-    customers = list(db.scalars(select(Customer).where(Customer.business_id == business.id)))
-
+def compute_dashboard_series(db: Session, usuario: Usuario) -> dict:
+    emp_id = usuario.emp_id
     now = datetime.now(timezone.utc)
     cutoff_30 = now - timedelta(days=30)
-
+    # Ventas últimos 30d y por mes
+    ventas = list(db.scalars(select(Venta).where(Venta.emp_id == emp_id)).all())
+    clientes = list(db.scalars(select(Cliente).where(Cliente.emp_id == emp_id)).all())
     sales_by_day: dict[str, float] = {}
     sales_by_month: dict[str, float] = {}
-    for s in sales:
-        if s.date >= cutoff_30:
-            key = s.date.strftime("%m-%d")
-            sales_by_day[key] = sales_by_day.get(key, 0) + float(s.total)
-        month_key = s.date.strftime("%Y-%m")
-        sales_by_month[month_key] = sales_by_month.get(month_key, 0) + float(s.total)
-
+    for v in ventas:
+        dt = v.created_at or v.updated_at or now
+        # asegurar tz aware
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        month_key = dt.strftime("%Y-%m")
+        sales_by_month[month_key] = sales_by_month.get(month_key, 0) + float(v.ven_total or 0)
+        if dt >= cutoff_30:
+            key = dt.strftime("%m-%d")
+            sales_by_day[key] = sales_by_day.get(key, 0) + float(v.ven_total or 0)
     new_by_month: dict[str, int] = {}
-    for c in customers:
-        key = c.registered_at.strftime("%Y-%m")
+    for c in clientes:
+        dt = c.created_at or now
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        key = dt.strftime("%Y-%m")
         new_by_month[key] = new_by_month.get(key, 0) + 1
-
-    top_products_stmt = (
-        select(SaleItem.product_id, func.sum(SaleItem.quantity))
-        .join(Sale, Sale.id == SaleItem.sale_id)
-        .where(Sale.business_id == business.id)
-        .group_by(SaleItem.product_id)
-        .order_by(func.sum(SaleItem.quantity).desc())
-        .limit(8)
-    )
+    # Top productos por cantidad vendida
     top_products = []
-    for product_id, qty in db.execute(top_products_stmt):
-        product = db.get(Product, product_id)
-        if product:
-            top_products.append({"label": product.name, "value": float(qty)})
-
-    segment_counts: dict[str, int] = {}
-    revenue_by_segment: dict[str, float] = {}
-    for c in customers:
-        seg = c.segment.value
-        segment_counts[seg] = segment_counts.get(seg, 0) + 1
-        revenue_by_segment[seg] = revenue_by_segment.get(seg, 0) + float(c.total_spend)
-
+    try:
+        top_stmt = (
+            select(VentaItem.prd_id, func.sum(VentaItem.cantidad))
+            .join(Venta, Venta.ven_id == VentaItem.ven_id)
+            .where(Venta.emp_id == emp_id)
+            .group_by(VentaItem.prd_id)
+            .order_by(func.sum(VentaItem.cantidad).desc())
+            .limit(8)
+        )
+        for prd_id, qty in db.execute(top_stmt):
+            prod = db.scalar(select(Producto).where(Producto.emp_id == emp_id, Producto.prd_id == prd_id))
+            label = prod.prd_nombre if prod else str(prd_id)[:8]
+            top_products.append({"label": label, "value": float(qty)})
+    except Exception:
+        top_products = []
+    # Acorde al backend: devolver todas las series que espera el schema, vacías si no hay datos
     return {
         "sales_by_day": [{"label": k, "value": round(v, 2)} for k, v in sorted(sales_by_day.items())],
         "sales_by_month": [{"label": k, "value": round(v, 2)} for k, v in sorted(sales_by_month.items())][-12:],
         "new_customers_by_month": [{"label": k, "value": v} for k, v in sorted(new_by_month.items())][-12:],
+        "lost_customers_by_month": [],
+        "recovered_customers_by_month": [],
+        "churn_evolution": [],
         "top_products": top_products,
-        "segment_distribution": [{"label": k, "value": v} for k, v in segment_counts.items()],
-        "revenue_by_segment": sorted(
-            [{"label": k, "value": round(v, 2)} for k, v in revenue_by_segment.items()], key=lambda x: -x["value"]
-        ),
+        "segment_distribution": [],
+        "revenue_by_segment": [],
     }

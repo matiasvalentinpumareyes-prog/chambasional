@@ -104,13 +104,54 @@ export const authApi = {
 };
 
 // ---------------- Dashboard ----------------
+// Backend devuelve snake_case (acorde a app/schemas/dashboard.py). Frontend usa camelCase.
+function mapDashboardMetrics(raw: any): DashboardMetrics {
+  return {
+    totalSales: raw.total_sales ?? raw.totalSales ?? 0,
+    totalCustomers: raw.total_customers ?? raw.totalCustomers ?? 0,
+    activeCustomers: raw.active_customers ?? raw.activeCustomers ?? 0,
+    inactiveCustomers: raw.inactive_customers ?? raw.inactiveCustomers ?? 0,
+    atRiskCustomers: raw.at_risk_customers ?? raw.atRiskCustomers ?? 0,
+    lostCustomers: raw.lost_customers ?? raw.lostCustomers ?? 0,
+    criticalCustomers: raw.critical_customers ?? raw.criticalCustomers ?? 0,
+    estimatedChurnRate: raw.estimated_churn_rate ?? raw.estimatedChurnRate ?? 0,
+    recoverableCustomers: raw.recoverable_customers ?? raw.recoverableCustomers ?? 0,
+    totalCustomerValue: raw.total_customer_value ?? raw.totalCustomerValue ?? 0,
+    avgTicket: raw.avg_ticket ?? raw.avgTicket ?? 0,
+    avgPurchaseFrequencyDays: raw.avg_purchase_frequency_days ?? raw.avgPurchaseFrequencyDays ?? 0,
+    recoveredRevenue: raw.recovered_revenue ?? raw.recoveredRevenue ?? 0,
+    activeCampaigns: raw.active_campaigns ?? raw.activeCampaigns ?? 0,
+    finishedCampaigns: raw.finished_campaigns ?? raw.finishedCampaigns ?? 0,
+    conversionRate: raw.conversion_rate ?? raw.conversionRate ?? 0,
+    campaignRoi: raw.campaign_roi ?? raw.campaignRoi ?? null,
+    dataQualityScore: raw.data_quality_score ?? raw.dataQualityScore ?? 0,
+    currency: raw.currency ?? "PEN",
+  };
+}
+
+function mapDashboardSeries(raw: any): DashboardSeries {
+  const toArr = (v: any) => (Array.isArray(v) ? v : []);
+  return {
+    salesByDay: toArr(raw.sales_by_day ?? raw.salesByDay),
+    salesByMonth: toArr(raw.sales_by_month ?? raw.salesByMonth),
+    newCustomersByMonth: toArr(raw.new_customers_by_month ?? raw.newCustomersByMonth),
+    lostCustomersByMonth: toArr(raw.lost_customers_by_month ?? raw.lostCustomersByMonth),
+    recoveredCustomersByMonth: toArr(raw.recovered_customers_by_month ?? raw.recoveredCustomersByMonth),
+    churnEvolution: toArr(raw.churn_evolution ?? raw.churnEvolution),
+    topProducts: toArr(raw.top_products ?? raw.topProducts),
+    segmentDistribution: toArr(raw.segment_distribution ?? raw.segmentDistribution),
+    revenueBySegment: toArr(raw.revenue_by_segment ?? raw.revenueBySegment),
+  };
+}
 
 export const dashboardApi = {
   getMetrics: async (): Promise<DashboardMetrics> => {
-    return realFetch<DashboardMetrics>("/dashboard");
+    const raw = await realFetch<any>("/dashboard");
+    return mapDashboardMetrics(raw);
   },
   getSeries: async (): Promise<DashboardSeries> => {
-    return realFetch<DashboardSeries>("/dashboard/series");
+    const raw = await realFetch<any>("/dashboard/series");
+    return mapDashboardSeries(raw);
   },
 };
 

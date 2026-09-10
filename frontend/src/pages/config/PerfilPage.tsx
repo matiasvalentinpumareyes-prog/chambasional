@@ -34,21 +34,16 @@ export function PerfilPage() {
         <Panel title="Mi ficha personal">
           <div className="space-y-3">
             <div>
-              <Label>usp_nombres</Label>
+              <Label>Nombres</Label>
               <Input value={form.usp_nombres ?? ""} onChange={(e) => setForm({ ...form, usp_nombres: e.target.value })} />
             </div>
             <div>
-              <Label>usp_dni</Label>
+              <Label>dni</Label>
               <Input value={form.usp_dni ?? ""} onChange={(e) => setForm({ ...form, usp_dni: e.target.value })} maxLength={8} />
             </div>
             <div>
-              <Label>usp_celular</Label>
+              <Label>celular</Label>
               <Input value={form.usp_celular ?? ""} onChange={(e) => setForm({ ...form, usp_celular: e.target.value })} />
-            </div>
-            <div className="flex gap-2 text-[11px] text-muted">
-              <span>usp_id: {form.usp_id?.slice(0, 8)}…</span>
-              <span>emp_id: {form.emp_id?.slice(0, 8)}…</span>
-              <span>estado: {form.estado}</span>
             </div>
             <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>
               {mutation.isPending ? "Guardando..." : "Guardar mis datos"}

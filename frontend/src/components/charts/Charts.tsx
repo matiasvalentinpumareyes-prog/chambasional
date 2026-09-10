@@ -10,10 +10,14 @@ const tooltipStyle = {
   contentStyle: { borderRadius: 6, border: "1px solid #E1E4DC", fontSize: 12.5, fontFamily: "IBM Plex Sans" },
 };
 
-export function SimpleLineChart({ data, height = 220, color = "#1F6F5C" }: { data: SeriesPoint[]; height?: number; color?: string }) {
+export function SimpleLineChart({ data, height = 220, color = "#1F6F5C" }: { data?: SeriesPoint[] | null; height?: number; color?: string }) {
+  const safeData = data ?? [];
+  if (safeData.length === 0) {
+    return <div className="flex items-center justify-center text-sm text-muted" style={{ height }}>Sin datos suficientes</div>;
+  }
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <LineChart data={data} margin={{ top: 4, right: 8, left: -18, bottom: 0 }}>
+      <LineChart data={safeData} margin={{ top: 4, right: 8, left: -18, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#E1E4DC" vertical={false} />
         <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#5B6660" }} axisLine={{ stroke: "#E1E4DC" }} tickLine={false} />
         <YAxis tick={{ fontSize: 11, fill: "#5B6660" }} axisLine={false} tickLine={false} width={44} />
@@ -24,10 +28,14 @@ export function SimpleLineChart({ data, height = 220, color = "#1F6F5C" }: { dat
   );
 }
 
-export function SimpleBarChart({ data, height = 220, color = "#1F6F5C", horizontal = false }: { data: SeriesPoint[]; height?: number; color?: string; horizontal?: boolean }) {
+export function SimpleBarChart({ data, height = 220, color = "#1F6F5C", horizontal = false }: { data?: SeriesPoint[] | null; height?: number; color?: string; horizontal?: boolean }) {
+  const safeData = data ?? [];
+  if (safeData.length === 0) {
+    return <div className="flex items-center justify-center text-sm text-muted" style={{ height }}>Sin datos suficientes</div>;
+  }
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={data} layout={horizontal ? "vertical" : "horizontal"} margin={{ top: 4, right: 12, left: horizontal ? 8 : -18, bottom: 0 }}>
+      <BarChart data={safeData} layout={horizontal ? "vertical" : "horizontal"} margin={{ top: 4, right: 12, left: horizontal ? 8 : -18, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#E1E4DC" horizontal={!horizontal} vertical={horizontal} />
         {horizontal ? (
           <>
@@ -47,12 +55,16 @@ export function SimpleBarChart({ data, height = 220, color = "#1F6F5C", horizont
   );
 }
 
-export function SimplePieChart({ data, height = 220 }: { data: SeriesPoint[]; height?: number }) {
+export function SimplePieChart({ data, height = 220 }: { data?: SeriesPoint[] | null; height?: number }) {
+  const safeData = data ?? [];
+  if (safeData.length === 0) {
+    return <div className="flex items-center justify-center text-sm text-muted" style={{ height }}>Sin datos suficientes</div>;
+  }
   return (
     <ResponsiveContainer width="100%" height={height}>
       <PieChart>
-        <Pie data={data} dataKey="value" nameKey="label" innerRadius={55} outerRadius={85} paddingAngle={2}>
-          {data.map((_, i) => (
+        <Pie data={safeData} dataKey="value" nameKey="label" innerRadius={55} outerRadius={85} paddingAngle={2}>
+          {safeData.map((_, i) => (
             <Cell key={i} fill={COLORS[i % COLORS.length]} />
           ))}
         </Pie>

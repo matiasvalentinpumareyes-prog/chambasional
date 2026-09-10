@@ -37,14 +37,14 @@ class SeriesPoint(BaseModel):
 
 
 class DashboardSeriesOut(BaseModel):
-    """Series temporales y distribuciones del dashboard (DashboardSeries en frontend/src/types)."""
+    """Series temporales y distribuciones del dashboard (DashboardSeries en frontend/src/types). Acorde al backend: snake_case, vacíos como [] no null."""
 
     sales_by_day: list[SeriesPoint] = Field(default_factory=list, description="Ventas últimos 30 días por día (MM-DD)")
     sales_by_month: list[SeriesPoint] = Field(default_factory=list, description="Ventas por mes (YYYY-MM)")
     new_customers_by_month: list[SeriesPoint] = Field(default_factory=list, description="Altas por mes")
-    lost_customers_by_month: list[SeriesPoint] | None = Field(None, description="Opcional: churn mensual si se calcula")
-    recovered_customers_by_month: list[SeriesPoint] | None = Field(None, description="Opcional")
-    churn_evolution: list[SeriesPoint] | None = Field(None, description="Opcional: evolución tasa churn")
+    lost_customers_by_month: list[SeriesPoint] = Field(default_factory=list, description="Churn mensual si se calcula")
+    recovered_customers_by_month: list[SeriesPoint] = Field(default_factory=list, description="Recuperados por mes")
+    churn_evolution: list[SeriesPoint] = Field(default_factory=list, description="Evolución tasa churn")
     top_products: list[SeriesPoint] = Field(default_factory=list, description="Top productos por cantidad vendida")
     segment_distribution: list[SeriesPoint] = Field(default_factory=list, description="Clientes por segmento")
     revenue_by_segment: list[SeriesPoint] = Field(default_factory=list, description="Revenue por segmento ordenado desc")

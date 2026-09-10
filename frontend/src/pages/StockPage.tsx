@@ -96,7 +96,7 @@ function MovimientoModal({ open, onClose, products, onSuccess }: { open: boolean
     <Modal open={open} onClose={onClose} title="Ajuste de stock" width="max-w-md">
       <div className="space-y-4">
         <div>
-          <Label>Producto (prd_id)</Label>
+          <Label>Producto</Label>
           <Select value={prd_id} onChange={(e) => setPrdId(e.target.value)} className="w-full">
             <option value="">Selecciona producto</option>
             {products.map((p) => (
@@ -107,9 +107,8 @@ function MovimientoModal({ open, onClose, products, onSuccess }: { open: boolean
           </Select>
         </div>
         <div>
-          <Label>Delta (stk_cantidad + delta)</Label>
+          <Label>Delta</Label>
           <Input type="number" value={delta} onChange={(e) => setDelta(Number(e.target.value))} />
-          <p className="text-[11px] text-muted mt-1">Positivo = ingreso, negativo = egreso. Se valida contra stk_min/stk_max.</p>
         </div>
         <div>
           <Label>Motivo</Label>

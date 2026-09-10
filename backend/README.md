@@ -1,3 +1,7 @@
+# cd backend
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+# cd frontend npm run dev
+
 # Backend — Sistema de Marketing Predictivo
 
 API REST en **FastAPI + PostgreSQL + SQLAlchemy + Alembic**, con el motor

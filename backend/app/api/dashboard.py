@@ -11,10 +11,10 @@ router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 
 @router.get("", response_model=DashboardMetricsOut)
-def get_dashboard(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    return compute_dashboard_metrics(db, user.business)
+def get_dashboard(db: Session = Depends(get_db), usuario: Usuario = Depends(get_current_user)):
+    return compute_dashboard_metrics(db, usuario)
 
 
 @router.get("/series", response_model=DashboardSeriesOut)
-def get_dashboard_series(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    return compute_dashboard_series(db, user.business)
+def get_dashboard_series(db: Session = Depends(get_db), usuario: Usuario = Depends(get_current_user)):
+    return compute_dashboard_series(db, usuario)
