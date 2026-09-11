@@ -15,7 +15,7 @@ export function CategoriesPage() {
   });
 
   return (
-    <AppLayout title="Categorías" subtitle="Control de categorias.cat_id / cat_nombre (1 tabla principal)">
+    <AppLayout title="Categorías" subtitle="Control de categorias">
       <div className="flex justify-end mb-4">
         <Button onClick={() => setOpen(true)}>Nueva categoría</Button>
       </div>
@@ -39,13 +39,13 @@ export function CategoriesPage() {
       </div>
       <Modal open={open} onClose={() => setOpen(false)} title="Nueva categoría">
         <div className="space-y-3">
-          <Label>cat_nombre</Label>
-          <Input value={cat_nombre} onChange={(e) => setCatNombre(e.target.value)} placeholder="Ej. Panadería" />
+          <Label>Nombre</Label>
+          <Input value={cat_nombre} onChange={(e) => setCatNombre(e.target.value)} placeholder="Introduce el nombre de la categoría" />
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={() => setOpen(false)}>Guardar (vía Productos)</Button>
+            <Button onClick={() => setOpen(false)}>Guardar</Button>
           </div>
-          <p className="text-[11px] text-muted">Las categorías se crean automáticamente al crear un producto con nueva categoría (producto_repo.get_or_create_categoria).</p>
+          <p className="text-[11px] text-muted">Las categorías se crean automáticamente al crear un producto con nueva categoría</p>
         </div>
       </Modal>
     </AppLayout>
@@ -71,7 +71,7 @@ export function SubcategoriasPage() {
   });
 
   return (
-    <AppLayout title="Subcategorías" subtitle="Control de subcategorias.subcat_id / cat_id (tabla principal, hija de categorias)">
+    <AppLayout title="Subcategorías" subtitle="Control de subcategorias">
       <div className="flex gap-2 mb-4">
         <Input placeholder="cat_id para filtrar/crear" value={cat_id} onChange={(e) => setCatId(e.target.value)} className="flex-1" />
         <Input placeholder="subcat_nombre" value={subcat_nombre} onChange={(e) => setSubcatNombre(e.target.value)} className="flex-1" />
@@ -96,7 +96,7 @@ export function SubcategoriasPage() {
             ))}
             {(!subcategorias || subcategorias.length === 0) && (
               <li className="py-8 text-center text-muted">
-                {cat_id ? "Sin subcategorías para este cat_id — verifica que el cat_id sea un UUID válido" : "Sin subcategorías — crea una categoría y luego una subcategoría"}
+                {cat_id ? "Sin subcategorías" : "Sin subcategorías — crea una categoría y luego una subcategoría"}
               </li>
             )}
           </ul>

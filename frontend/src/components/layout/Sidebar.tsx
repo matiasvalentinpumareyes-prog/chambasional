@@ -81,12 +81,6 @@ export function Sidebar({ collapsed: controlledCollapsed, onToggle }: { collapse
   return (
     <aside className={classNames("shrink-0 border-r border-border bg-surface flex flex-col h-screen sticky top-0 transition-all duration-200", collapsed ? "w-[64px]" : "w-60")}>
       <div className={classNames("flex items-center gap-2 border-b border-border", collapsed ? "px-2 py-4 justify-center" : "px-5 py-5")}>
-        {!collapsed && (
-          <div className="min-w-0 flex-1">
-            <p className="font-display font-semibold text-[14px] leading-tight text-ink truncate">Marketing Predictivo</p>
-            <p className="text-[11px] text-muted leading-tight truncate">Panel de negocio</p>
-          </div>
-        )}
         <button
           onClick={toggle}
           title={collapsed ? "Expandir sidebar" : "Colapsar sidebar"}

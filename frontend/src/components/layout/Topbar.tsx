@@ -31,7 +31,7 @@ export function Topbar({ title, subtitle }: { title: string; subtitle?: string }
   }
 
   return (
-    <header className="sticky top-0 z-20 bg-surface border-b border-border px-8 py-3.5 flex items-center justify-between">
+    <header className="sticky top-0 z-20 bg-surface border-b border-border px-8 py-2.5 flex items-center justify-between">
       <div>
         <h1 className="font-display font-semibold text-[20px] text-ink">{title}</h1>
         {subtitle && <p className="text-[13px] text-muted mt-0.5">{subtitle}</p>}

@@ -107,7 +107,7 @@ function MovimientoModal({ open, onClose, products, onSuccess }: { open: boolean
           </Select>
         </div>
         <div>
-          <Label>Delta</Label>
+          <Label>Stock</Label>
           <Input type="number" value={delta} onChange={(e) => setDelta(Number(e.target.value))} />
         </div>
         <div>

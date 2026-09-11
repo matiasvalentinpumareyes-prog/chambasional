@@ -8,7 +8,6 @@ from app.models.base import Base  # 44 tablas BD
 import app.models  # noqa: F401  -- registra todos los modelos en Base.metadata
 
 config = context.config
-# Escapar % para ConfigParser (ej: %24 de password con $). Sin esto, ValueError: invalid interpolation syntax.
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL.replace("%", "%%"))
 
 if config.config_file_name is not None:
