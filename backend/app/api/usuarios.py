@@ -31,12 +31,12 @@ def _to_usuario_out(db: Session, usu: Usuario) -> UsuarioOut:
     if usu.usp_id:
         persona = db.scalar(select(UsuarioPersonal).where(UsuarioPersonal.emp_id == usu.emp_id, UsuarioPersonal.usp_id == usu.usp_id))
     return UsuarioOut(
-        emp_id=usu.emp_id,
+        emp_id=str(usu.emp_id) if usu.emp_id else "",
         usu_usuario=usu.usu_usuario,
         usu_email=usu.usu_email,
-        rol_id=usu.rol_id,
-        usp_id=usu.usp_id,
-        usu_id=usu.usu_id,
+        rol_id=str(usu.rol_id) if usu.rol_id else None,
+        usp_id=str(usu.usp_id) if usu.usp_id else None,
+        usu_id=str(usu.usu_id) if usu.usu_id else "",
         estado=usu.estado,
         created_at=usu.created_at,
         updated_at=usu.updated_at,
@@ -50,7 +50,7 @@ def _to_usuario_out(db: Session, usu: Usuario) -> UsuarioOut:
 @roles_router.get("", summary="Lista roles desde BD (sin hardcode)")
 def list_roles(db: Session = Depends(get_db), usuario: Usuario = Depends(get_current_user)):
     rows = db.scalars(select(Rol).where(Rol.estado == 1).order_by(Rol.rol_codigo)).all()
-    return [{"rol_id": r.rol_id, "rol_codigo": r.rol_codigo, "rol_nombre": r.rol_nombre, "rol_descripcion": r.rol_descripcion} for r in rows]
+    return [{"rol_id": str(r.rol_id) if r.rol_id else "", "rol_codigo": r.rol_codigo, "rol_nombre": r.rol_nombre, "rol_descripcion": r.rol_descripcion} for r in rows]
 
 
 # ---- Usuarios ----
@@ -155,8 +155,8 @@ def get_mi_personal(db: Session = Depends(get_db), usuario: Usuario = Depends(ge
     if not pers:
         raise NotFoundError("PERSONAL_NOT_FOUND", "Ficha personal no encontrada.")
     return UsuarioPersonalOut(
-        emp_id=pers.emp_id, usp_dni=pers.usp_dni, usp_nombres=pers.usp_nombres, usp_celular=pers.usp_celular,
-        usp_id=pers.usp_id, estado=pers.estado, created_at=pers.created_at, updated_at=pers.updated_at,
+        emp_id=str(pers.emp_id) if pers.emp_id else "", usp_dni=pers.usp_dni, usp_nombres=pers.usp_nombres, usp_celular=pers.usp_celular,
+        usp_id=str(pers.usp_id) if pers.usp_id else "", estado=pers.estado, created_at=pers.created_at, updated_at=pers.updated_at,
     )
 
 
@@ -170,7 +170,7 @@ def update_mi_personal(payload: UsuarioPersonalUpdate, db: Session = Depends(get
         db.refresh(pers)
         usuario.usp_id = pers.usp_id
         db.commit()
-        return UsuarioPersonalOut(emp_id=pers.emp_id, usp_dni=pers.usp_dni, usp_nombres=pers.usp_nombres, usp_celular=pers.usp_celular, usp_id=pers.usp_id, estado=pers.estado, created_at=pers.created_at, updated_at=pers.updated_at)
+        return UsuarioPersonalOut(emp_id=str(pers.emp_id) if pers.emp_id else "", usp_dni=pers.usp_dni, usp_nombres=pers.usp_nombres, usp_celular=pers.usp_celular, usp_id=str(pers.usp_id) if pers.usp_id else "", estado=pers.estado, created_at=pers.created_at, updated_at=pers.updated_at)
 
     pers = db.scalar(select(UsuarioPersonal).where(UsuarioPersonal.emp_id == usuario.emp_id, UsuarioPersonal.usp_id == usuario.usp_id))
     if not pers:
@@ -180,4 +180,4 @@ def update_mi_personal(payload: UsuarioPersonalUpdate, db: Session = Depends(get
         setattr(pers, k, v)
     db.commit()
     db.refresh(pers)
-    return UsuarioPersonalOut(emp_id=pers.emp_id, usp_dni=pers.usp_dni, usp_nombres=pers.usp_nombres, usp_celular=pers.usp_celular, usp_id=pers.usp_id, estado=pers.estado, created_at=pers.created_at, updated_at=pers.updated_at)
+    return UsuarioPersonalOut(emp_id=str(pers.emp_id) if pers.emp_id else "", usp_dni=pers.usp_dni, usp_nombres=pers.usp_nombres, usp_celular=pers.usp_celular, usp_id=str(pers.usp_id) if pers.usp_id else "", estado=pers.estado, created_at=pers.created_at, updated_at=pers.updated_at)
