@@ -3,7 +3,7 @@ from decimal import Decimal
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-
+from datetime import datetime, timezone
 from app.api.pagination import PageParams
 from app.core.deps import get_current_user
 from app.core.errors import ConflictError, NotFoundError
@@ -121,29 +121,56 @@ def create_producto(payload: ProductoCreate, db: Session = Depends(get_db), usua
         raise ConflictError("SKU_ALREADY_EXISTS", "Ya existe un producto con este SKU en tu empresa.")
     if payload.prd_codbarra and repo.get_by_codbarra(usuario.emp_id, payload.prd_codbarra):
         raise ConflictError("CODBARRA_ALREADY_EXISTS", "Ya existe un producto con este código de barras.")
-
-    # Resolver categoria/subcategoria si vienen como nombres
     cat_id = payload.cat_id
     subcat_id = payload.subcat_id
-    if cat_id and len(cat_id) < 36:
-        cat = _get_or_create_categoria(db, usuario.emp_id, cat_id)
+    prd_marca_id = payload.prd_marca_id
+    if payload.cat_nombre:
+        cat = _get_or_create_categoria(db, usuario.emp_id, payload.cat_nombre)
         cat_id = cat.cat_id
-    # Validar subcat requiere cat
-    if subcat_id and not cat_id:
-        raise ConflictError("SUBCAT_REQUIERE_CAT", "subcat_id requiere cat_id (CHECK chk_producto_subcat_requiere_cat)")
-    if subcat_id and len(subcat_id) < 36:
-        # subcat_nombre viene en lugar de UUID
+    elif cat_id and len(str(cat_id)) != 36:
+        try:
+            import uuid as _uuid
+            _uuid.UUID(str(cat_id))
+        except Exception:
+            cat = _get_or_create_categoria(db, usuario.emp_id, str(cat_id))
+            cat_id = cat.cat_id
+    # subcat
+    if payload.subcat_nombre:
         if not cat_id:
-            raise ConflictError("SUBCAT_REQUIERE_CAT", "Para crear subcategoría por nombre se requiere cat_id")
+            raise ConflictError("SUBCAT_REQUIERE_CAT", "subcat_nombre requiere cat_nombre/cat_id")
         from app.repositories.producto_repo import ProductoRepository as PR
-        repo_tmp = PR(db)
-        sub = repo_tmp.get_or_create_subcategoria(usuario.emp_id, cat_id, subcat_id)
+        sub = PR(db).get_or_create_subcategoria(usuario.emp_id, cat_id, payload.subcat_nombre)
         subcat_id = sub.subcat_id
+    elif subcat_id and len(str(subcat_id)) != 36:
+        if not cat_id:
+            raise ConflictError("SUBCAT_REQUIERE_CAT", "subcat_id requiere cat_id")
+        try:
+            import uuid as _uuid
+            _uuid.UUID(str(subcat_id))
+        except Exception:
+            if not cat_id:
+                raise ConflictError("SUBCAT_REQUIERE_CAT", "Para crear subcategoría por nombre se requiere cat_id")
+            from app.repositories.producto_repo import ProductoRepository as PR
+            sub = PR(db).get_or_create_subcategoria(usuario.emp_id, cat_id, str(subcat_id))
+            subcat_id = sub.subcat_id
+    elif subcat_id and not cat_id:
+        raise ConflictError("SUBCAT_REQUIERE_CAT", "subcat_id requiere cat_id (CHECK chk_producto_subcat_requiere_cat)")
+    # marca
+    if payload.prd_marca_nombre:
+        marca = ProductoRepository(db).get_or_create_marca(usuario.emp_id, payload.prd_marca_nombre)
+        prd_marca_id = marca.prd_marca_id
+    elif prd_marca_id and len(str(prd_marca_id)) != 36:
+        try:
+            import uuid as _uuid
+            _uuid.UUID(str(prd_marca_id))
+        except Exception:
+            marca = ProductoRepository(db).get_or_create_marca(usuario.emp_id, str(prd_marca_id))
+            prd_marca_id = marca.prd_marca_id
 
     producto = Producto(
         emp_id=usuario.emp_id,
         subcat_id=subcat_id,
-        prd_marca_id=payload.prd_marca_id,
+        prd_marca_id=prd_marca_id,
         prd_sku=payload.prd_sku,
         prd_codbarra=payload.prd_codbarra,
         prd_nombre=payload.prd_nombre,
@@ -152,25 +179,30 @@ def create_producto(payload: ProductoCreate, db: Session = Depends(get_db), usua
     )
     created = repo.create(producto)
 
-    # Crear stock inicial si se provee via payload? ProductoCreate no trae stock, pero si viene en request extendido
-    # Buscar stock en payload dict (compat con frontend que envía stock)
-    payload_dict = payload.model_dump()
-    # Si frontend envía stock como int, crear producto_stock
-    stock_val = payload_dict.get("stk_cantidad") or payload_dict.get("stock")
+    stock_val = payload.stk_cantidad if payload.stk_cantidad is not None else None
+    if stock_val is None:
+        # compat alias inglés
+        payload_dict = payload.model_dump()
+        stock_val = payload_dict.get("stk_cantidad") or payload_dict.get("stock")
     if stock_val is not None:
         stock_repo = StockRepository(db)
         stock = ProductoStock(emp_id=usuario.emp_id, prd_id=created.prd_id, stk_cantidad=Decimal(str(stock_val)), stk_min=0)
         stock_repo.create_or_update(stock)
 
-    # Precio inicial si viene precio_vigente
-    precio_val = payload_dict.get("precio_vigente") or payload_dict.get("price") or payload_dict.get("prd_precios")
+    precio_val = payload.prd_precios if payload.prd_precios is not None else None
+    costo_val = payload.prd_precios_costo if payload.prd_precios_costo is not None else None
+    if precio_val is None:
+        payload_dict = payload.model_dump()
+        precio_val = payload_dict.get("precio_vigente") or payload_dict.get("price") or payload_dict.get("prd_precios")
+        costo_val = payload_dict.get("costo_vigente") or payload_dict.get("cost") or payload_dict.get("prd_precios_costo") if costo_val is None else costo_val
     if precio_val is not None:
         from datetime import datetime, timezone
         pp = ProductoPrecio(emp_id=usuario.emp_id, prd_id=created.prd_id, prd_precios=Decimal(str(precio_val)), fecha_inicio=datetime.now(timezone.utc))
-        # costo si viene
-        costo_val = payload_dict.get("costo_vigente") or payload_dict.get("cost") or payload_dict.get("prd_precios_costo")
         if costo_val is not None:
             pp.prd_precios_costo = Decimal(str(costo_val))
+        # unidad de medida
+        if payload.prd_precios_undmedida:
+            pp.prd_precios_undmedida = payload.prd_precios_undmedida
         db.add(pp)
         db.commit()
 
@@ -187,34 +219,91 @@ def update_producto(prd_id: str, payload: ProductoUpdate, db: Session = Depends(
         raise NotFoundError("PRODUCTO_NOT_FOUND", "Producto no encontrado.")
 
     patch = payload.model_dump(exclude_unset=True)
-    # DB real producto no tiene cat_id; cat solo sirve para resolver subcat
-    cat_for_sub = patch.get("cat_id") or (producto.subcat_id and db.scalar(select(Subcategoria.cat_id).where(Subcategoria.emp_id==usuario.emp_id, Subcategoria.subcat_id==producto.subcat_id)))
-    # Si prd_sku cambia, validar único
+    cat_for_sub = patch.get("cat_id") or patch.get("cat_nombre") or (producto.subcat_id and db.scalar(select(Subcategoria.cat_id).where(Subcategoria.emp_id==usuario.emp_id, Subcategoria.subcat_id==producto.subcat_id)))
+    cat_nombre = patch.pop("cat_nombre", None)
+    subcat_nombre = patch.pop("subcat_nombre", None)
+    prd_marca_nombre = patch.pop("prd_marca_nombre", None)
+    prd_precios = patch.pop("prd_precios", None)
+    prd_precios_costo = patch.pop("prd_precios_costo", None)
+    stk_cantidad = patch.pop("stk_cantidad", None)
+    prd_precios = prd_precios if prd_precios is not None else patch.pop("price", None)
+    prd_precios_costo = prd_precios_costo if prd_precios_costo is not None else patch.pop("cost", None)
+    stk_cantidad = stk_cantidad if stk_cantidad is not None else patch.pop("stock", None)
+    prd_precios_undmedida = patch.pop("prd_precios_undmedida", None)
+
     if "prd_sku" in patch and patch["prd_sku"]:
         existing = repo.get_by_sku(usuario.emp_id, patch["prd_sku"])
         if existing and existing.prd_id != prd_id:
             raise ConflictError("SKU_ALREADY_EXISTS", "SKU ya existe en otro producto.")
 
-    # Manejar categoria/subcategoria nombre — cat solo para crear subcat
-    if "cat_id" in patch:
-        # cat_id no se guarda en producto, solo se usa para crear subcat si hace falta
-        # si cat es nombre (<36), crear categoria
+    if cat_nombre:
+        cat = _get_or_create_categoria(db, usuario.emp_id, cat_nombre)
+        cat_for_sub = cat.cat_id
+    elif "cat_id" in patch:
         if patch["cat_id"] and len(str(patch["cat_id"])) < 36:
-            cat = _get_or_create_categoria(db, usuario.emp_id, patch["cat_id"])
-            patch["cat_id"] = cat.cat_id
-        # no persistir cat_id en producto (DB no tiene columna)
+            try:
+                import uuid as _uuid
+                _uuid.UUID(str(patch["cat_id"]))
+            except Exception:
+                cat = _get_or_create_categoria(db, usuario.emp_id, str(patch["cat_id"]))
+                patch["cat_id"] = cat.cat_id
         cat_for_sub = patch.pop("cat_id")
-    if "subcat_id" in patch and patch["subcat_id"]:
+    # subcategoria por nombre
+    if subcat_nombre:
+        if not cat_for_sub:
+            raise ConflictError("SUBCAT_REQUIERE_CAT", "subcat_nombre requiere cat_nombre/cat_id")
+        sub = ProductoRepository(db).get_or_create_subcategoria(usuario.emp_id, cat_for_sub, subcat_nombre)
+        patch["subcat_id"] = sub.subcat_id
+    elif "subcat_id" in patch and patch["subcat_id"]:
         if not cat_for_sub:
             raise ConflictError("SUBCAT_REQUIERE_CAT", "subcat_id requiere cat_id (DB: producto.subcat_id FK a subcategorias)")
-        # Si subcat es nombre, crear
         if len(str(patch["subcat_id"])) < 36:
-            from app.repositories.producto_repo import ProductoRepository as PR
-            repo_tmp = PR(db)
-            sub = repo_tmp.get_or_create_subcategoria(usuario.emp_id, cat_for_sub, patch["subcat_id"])
-            patch["subcat_id"] = sub.subcat_id
+            try:
+                import uuid as _uuid
+                _uuid.UUID(str(patch["subcat_id"]))
+            except Exception:
+                from app.repositories.producto_repo import ProductoRepository as PR
+                sub = PR(db).get_or_create_subcategoria(usuario.emp_id, cat_for_sub, str(patch["subcat_id"]))
+                patch["subcat_id"] = sub.subcat_id
+    if prd_marca_nombre and "prd_marca_id" not in patch:
+        marca = ProductoRepository(db).get_or_create_marca(usuario.emp_id, prd_marca_nombre)
+        patch["prd_marca_id"] = marca.prd_marca_id
+    elif "prd_marca_id" in patch and patch["prd_marca_id"]:
+        try:
+            import uuid as _uuid
+            _uuid.UUID(str(patch["prd_marca_id"]))
+        except Exception:
+            marca = ProductoRepository(db).get_or_create_marca(usuario.emp_id, str(patch["prd_marca_id"]))
+            patch["prd_marca_id"] = marca.prd_marca_id
 
     updated = repo.update(producto, patch)
+
+    if prd_precios is not None:        
+        # cerrar precios vigentes anteriores
+        vigente = db.scalar(select(ProductoPrecio).where(ProductoPrecio.emp_id==usuario.emp_id, ProductoPrecio.prd_id==prd_id, ProductoPrecio.fecha_fin.is_(None), ProductoPrecio.estado==1))
+        if vigente:
+            vigente.fecha_fin = datetime.now(timezone.utc)
+            vigente.estado = 0
+        pp = ProductoPrecio(emp_id=usuario.emp_id, prd_id=prd_id, prd_precios=Decimal(str(prd_precios)), fecha_inicio=datetime.now(timezone.utc))
+        if prd_precios_costo is not None:
+            pp.prd_precios_costo = Decimal(str(prd_precios_costo))
+        if prd_precios_undmedida:
+            pp.prd_precios_undmedida = prd_precios_undmedida
+        db.add(pp)
+        db.commit()
+        db.refresh(updated)
+    elif prd_precios_costo is not None:
+        vigente = db.scalar(select(ProductoPrecio).where(ProductoPrecio.emp_id==usuario.emp_id, ProductoPrecio.prd_id==prd_id, ProductoPrecio.fecha_fin.is_(None), ProductoPrecio.estado==1))
+        if vigente:
+            vigente.prd_precios_costo = Decimal(str(prd_precios_costo))
+            db.commit()
+
+    if stk_cantidad is not None:
+        stock_repo = StockRepository(db)
+        stock = ProductoStock(emp_id=usuario.emp_id, prd_id=prd_id, stk_cantidad=Decimal(str(stk_cantidad)), stk_min=0)
+        stock_repo.create_or_update(stock)
+        db.refresh(updated)
+
     return _to_out(db, updated)
 
 

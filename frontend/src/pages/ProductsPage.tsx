@@ -6,7 +6,8 @@ import { z } from "zod";
 import { Plus, Search } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { productsApi } from "@/services/api";
-import { Badge, Button, EmptyState, FieldError, Input, Label, Spinner } from "@/components/ui/Primitives";
+import { catalogsApi } from "@/services/api";
+import { Badge, Button, EmptyState, FieldError, Input, Label, Select, Spinner } from "@/components/ui/Primitives";
 import { Modal } from "@/components/ui/Modal";
 import { formatMoney } from "@/lib/format";
 import type { Product } from "@/types";
@@ -14,13 +15,16 @@ import type { Product } from "@/types";
 const PAGE_SIZE = 15;
 
 const schema = z.object({
-  sku: z.string().min(1, "El SKU es obligatorio."),
-  name: z.string().min(1, "El nombre es obligatorio."),
-  description: z.string().optional().or(z.literal("")),
-  category: z.string().min(1, "La categoría es obligatoria."),
-  price: z.coerce.number().min(0.01, "El precio debe ser mayor a 0."),
-  cost: z.coerce.number().min(0, "El costo no puede ser negativo.").optional(),
-  stock: z.coerce.number().min(0).optional(),
+  prd_sku: z.string().min(1, "SKU obligatorio.").max(100),
+  prd_nombre: z.string().min(1, "Nombre obligatorio.").max(150),
+  prd_descripcion: z.string().max(500).optional().or(z.literal("")),
+  prd_codbarra: z.string().max(100).optional().or(z.literal("")),
+  cat_nombre: z.string().min(1, "Categoría obligatoria.").max(100),
+  subcat_nombre: z.string().max(100).optional().or(z.literal("")),
+  prd_marca_nombre: z.string().max(100).optional().or(z.literal("")),
+  prd_precios: z.coerce.number().min(0.01, "Precio debe ser mayor a 0."),
+  prd_precios_costo: z.coerce.number().min(0).optional(),
+  stk_cantidad: z.coerce.number().min(0).optional(),
 });
 type FormValues = z.infer<typeof schema>;
 
@@ -44,7 +48,7 @@ export function ProductsPage() {
   const totalPages = data ? Math.max(1, Math.ceil(data.total / PAGE_SIZE)) : 1;
 
   return (
-    <AppLayout title="Productos" subtitle="Catálogo de productos del negocio">
+    <AppLayout title="Productos" subtitle="Catálogo de productos">
       <div className="flex flex-col sm:flex-row gap-3 mb-4 items-start sm:items-center justify-between">
         <div className="relative max-w-xs w-full">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
@@ -61,7 +65,7 @@ export function ProductsPage() {
             <Spinner /> Cargando productos...
           </div>
         )}
-        {!isLoading && data?.items.length === 0 && <EmptyState title="No se encontraron productos" />}
+        {!isLoading && data?.items.length === 0 && <EmptyState title="No se encontraron productos" description="Ajusta la búsqueda o crea uno nuevo." />}
         {!isLoading && data && data.items.length > 0 && (
           <>
             <table className="w-full text-[13.5px]">
@@ -69,9 +73,10 @@ export function ProductsPage() {
                 <tr className="border-b border-border text-left text-[11.5px] uppercase tracking-wide text-muted">
                   <th className="px-4 py-2.5 font-medium">SKU</th>
                   <th className="px-4 py-2.5 font-medium">Nombre</th>
+                  <th className="px-4 py-2.5 font-medium">Marca</th>
                   <th className="px-4 py-2.5 font-medium">Categoría</th>
                   <th className="px-4 py-2.5 font-medium text-right">Precio</th>
-                  <th className="px-4 py-2.5 font-medium text-right">Margen</th>
+                  <th className="px-4 py-2.5 font-medium text-right">Stock</th>
                   <th className="px-4 py-2.5 font-medium">Estado</th>
                   <th className="px-4 py-2.5 font-medium"></th>
                 </tr>
@@ -80,10 +85,11 @@ export function ProductsPage() {
                 {data.items.map((p) => (
                   <tr key={p.id} className="hover:bg-ink/[0.02]">
                     <td className="px-4 py-2.5 font-mono text-[12.5px] text-muted">{p.sku}</td>
-                    <td className="px-4 py-2.5 font-medium">{p.name}</td>
-                    <td className="px-4 py-2.5 text-muted">{p.category}</td>
+                    <td className="px-4 py-2.5 font-medium">{p.name}<div className="text-[11px] text-muted font-mono">{p.prd_codbarra ?? ""}</div></td>
+                    <td className="px-4 py-2.5 text-muted">{(p as any).marca_nombre ?? "—"}</td>
+                    <td className="px-4 py-2.5 text-muted">{p.category} {(p as any).subcategoria_nombre ? `/ ${(p as any).subcategoria_nombre}` : ""}</td>
                     <td className="px-4 py-2.5 text-right">{formatMoney(p.price)}</td>
-                    <td className="px-4 py-2.5 text-right text-muted">{p.margin != null ? `${p.margin}%` : "—"}</td>
+                    <td className="px-4 py-2.5 text-right text-muted">{p.stock != null ? p.stock : "—"}</td>
                     <td className="px-4 py-2.5">
                       <Badge tone={p.status === "active" ? "success" : "neutral"}>{p.status === "active" ? "Activo" : "Inactivo"}</Badge>
                     </td>
@@ -116,16 +122,51 @@ export function ProductsPage() {
 
 function ProductFormModal({ open, onClose, product }: { open: boolean; onClose: () => void; product: Product | null }) {
   const queryClient = useQueryClient();
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
+  const { data: categorias } = useQuery({ queryKey: ["categorias"], queryFn: catalogsApi.segmentos, enabled: false }); // fallback, use productsApi.categories actually
+  const { data: catList } = useQuery({ queryKey: ["product-categorias"], queryFn: productsApi.categories, enabled: open });
+  const { data: subcatsRaw } = useQuery({ queryKey: ["subcategorias-all"], queryFn: () => catalogsApi.subcategorias(), enabled: open });
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<FormValues>({
     resolver: zodResolver(schema),
     values: product
-      ? { sku: product.sku, name: product.name, description: product.description ?? "", category: product.category, price: product.price, cost: product.cost ?? undefined, stock: product.stock ?? undefined }
-      : { sku: "", name: "", description: "", category: "", price: 0, cost: undefined, stock: undefined },
+      ? {
+          prd_sku: (product as any).prd_sku ?? product.sku ?? "",
+          prd_nombre: (product as any).prd_nombre ?? product.name ?? "",
+          prd_descripcion: (product as any).prd_descripcion ?? product.description ?? "",
+          prd_codbarra: (product as any).prd_codbarra ?? "",
+          cat_nombre: (product as any).categoria_nombre ?? product.category ?? "",
+          subcat_nombre: (product as any).subcategoria_nombre ?? "",
+          prd_marca_nombre: (product as any).marca_nombre ?? "",
+          prd_precios: (product as any).prd_precios ?? product.price ?? 0,
+          prd_precios_costo: (product as any).prd_precios_costo ?? product.cost ?? undefined,
+          stk_cantidad: (product as any).stk_cantidad ?? product.stock ?? undefined,
+        }
+      : { prd_sku: "", prd_nombre: "", prd_descripcion: "", prd_codbarra: "", cat_nombre: "", subcat_nombre: "", prd_marca_nombre: "", prd_precios: 0, prd_precios_costo: undefined, stk_cantidad: undefined },
   });
+
+  const selectedCat = watch("cat_nombre");
 
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
-      const payload = { ...values, description: values.description || null, cost: values.cost ?? null, stock: values.stock ?? null, status: "active" as const };
+      const payload: any = {
+        prd_sku: values.prd_sku.trim(),
+        prd_nombre: values.prd_nombre.trim(),
+        prd_descripcion: values.prd_descripcion?.trim() || null,
+        prd_codbarra: values.prd_codbarra?.trim() || null,
+        cat_nombre: values.cat_nombre.trim(),
+        subcat_nombre: values.subcat_nombre?.trim() || null,
+        prd_marca_nombre: values.prd_marca_nombre?.trim() || null,
+        prd_precios: Number(values.prd_precios),
+        prd_precios_costo: values.prd_precios_costo != null ? Number(values.prd_precios_costo) : null,
+        stk_cantidad: values.stk_cantidad != null ? Number(values.stk_cantidad) : null,
+      };
       if (product) return productsApi.update(product.id, payload);
       return productsApi.create(payload);
     },
@@ -141,42 +182,64 @@ function ProductFormModal({ open, onClose, product }: { open: boolean; onClose: 
       <form onSubmit={handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label>SKU</Label>
-            <Input {...register("sku")} />
-            <FieldError>{errors.sku?.message}</FieldError>
+            <Label>SKU *</Label>
+            <Input {...register("prd_sku")} placeholder="SKU-001" />
+            <FieldError>{errors.prd_sku?.message}</FieldError>
           </div>
           <div>
-            <Label>Categoría</Label>
-            <Input {...register("category")} list="categories" />
-            <CategoryDatalist />
-            <FieldError>{errors.category?.message}</FieldError>
+            <Label>Cód. barras</Label>
+            <Input {...register("prd_codbarra")} placeholder="750123..." />
+            <FieldError>{errors.prd_codbarra?.message}</FieldError>
           </div>
         </div>
         <div>
-          <Label>Nombre</Label>
-          <Input {...register("name")} />
-          <FieldError>{errors.name?.message}</FieldError>
+          <Label>Nombre *</Label>
+          <Input {...register("prd_nombre")} placeholder="Ej. Café Premium 250g" />
+          <FieldError>{errors.prd_nombre?.message}</FieldError>
         </div>
         <div>
           <Label>Descripción</Label>
-          <Input {...register("description")} placeholder="opcional" />
+          <Input {...register("prd_descripcion")} placeholder="opcional" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>Categoría *</Label>
+            <Input {...register("cat_nombre")} list="cat-list" placeholder="Elige o crea" />
+            <datalist id="cat-list">
+              {catList?.map((c: string) => <option key={c} value={c} />)}
+            </datalist>
+            <FieldError>{errors.cat_nombre?.message}</FieldError>
+          </div>
+          <div>
+            <Label>Subcategoría</Label>
+            <Input {...register("subcat_nombre")} list="subcat-list" placeholder="opcional" />
+            <datalist id="subcat-list">
+              {subcatsRaw?.map((s: any) => <option key={s.subcat_id ?? s} value={s.subcat_nombre ?? s} />)}
+            </datalist>
+            <FieldError>{errors.subcat_nombre?.message}</FieldError>
+          </div>
+        </div>
+        <div>
+          <Label>Marca</Label>
+          <Input {...register("prd_marca_nombre")} placeholder="opcional — se crea si no existe" />
+          <FieldError>{errors.prd_marca_nombre?.message}</FieldError>
         </div>
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <Label>Precio</Label>
-            <Input type="number" step="0.01" {...register("price")} />
-            <FieldError>{errors.price?.message}</FieldError>
+            <Label>Precio venta *</Label>
+            <Input type="number" step="0.01" {...register("prd_precios")} />
+            <FieldError>{errors.prd_precios?.message}</FieldError>
           </div>
           <div>
             <Label>Costo</Label>
-            <Input type="number" step="0.01" {...register("cost")} placeholder="opcional" />
+            <Input type="number" step="0.01" {...register("prd_precios_costo")} placeholder="opcional" />
           </div>
           <div>
-            <Label>Stock</Label>
-            <Input type="number" {...register("stock")} placeholder="opcional" />
+            <Label>Stock inicial</Label>
+            <Input type="number" {...register("stk_cantidad")} placeholder="0" />
           </div>
         </div>
-        {mutation.isError && <p className="text-[13px] text-risk-critical">No se pudo guardar el producto.</p>}
+        {mutation.isError && <p className="text-[13px] text-risk-critical">{(mutation.error as any)?.message ?? "No se pudo guardar el producto. Verifica SKU único."} </p>}
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
           <Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? "Guardando..." : product ? "Guardar cambios" : "Crear producto"}</Button>
@@ -186,7 +249,6 @@ function ProductFormModal({ open, onClose, product }: { open: boolean; onClose: 
   );
 }
 
-// Referencia usada por el datalist de categorías en el formulario.
 export function CategoryDatalist() {
   const { data } = useQuery({ queryKey: ["product-categories"], queryFn: productsApi.categories });
   return (

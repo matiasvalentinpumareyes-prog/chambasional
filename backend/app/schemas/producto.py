@@ -99,8 +99,18 @@ class ProductoBase(BaseModel):
 
 
 class ProductoCreate(ProductoBase):
+    emp_id: str | None = Field(None, description="Tenant empresa.emp_id — se toma del token si no se envía")
     estado: int = Field(default=1)
     created_by: str | None = None
+    cat_nombre: str | None = Field(None, max_length=100, description="categorias.cat_nombre — si no existe se crea")
+    subcat_nombre: str | None = Field(None, max_length=100, description="subcategorias.subcat_nombre")
+    prd_marca_nombre: str | None = Field(None, max_length=100, description="producto_marca.prd_marca_nombre")
+    prd_precios: Decimal | None = Field(None, ge=0, description="producto_precios.prd_precios")
+    prd_precios_costo: Decimal | None = Field(None, ge=0, description="producto_precios.prd_precios_costo")
+    stk_cantidad: Decimal | None = Field(None, ge=0, description="producto_stock.stk_cantidad")
+    prd_precios_undmedida: str | None = Field(None, max_length=3)
+
+    model_config = {"from_attributes": True, "extra": "allow"}
 
 
 class ProductoUpdate(BaseModel):
@@ -112,8 +122,15 @@ class ProductoUpdate(BaseModel):
     prd_nombre: str | None = Field(None, min_length=1, max_length=150)
     prd_descripcion: str | None = None
     estado: int | None = None
+    cat_nombre: str | None = Field(None, max_length=100)
+    subcat_nombre: str | None = Field(None, max_length=100)
+    prd_marca_nombre: str | None = Field(None, max_length=100)
+    prd_precios: Decimal | None = Field(None, ge=0)
+    prd_precios_costo: Decimal | None = Field(None, ge=0)
+    stk_cantidad: Decimal | None = Field(None, ge=0)
+    prd_precios_undmedida: str | None = Field(None, max_length=3)
 
-    model_config = {"from_attributes": True}
+    model_config = {"from_attributes": True, "extra": "allow"}
 
 
 class ProductoOut(ProductoBase):

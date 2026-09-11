@@ -8,16 +8,13 @@ import type {
   ModelVersion,
   Paginated,
   Product,
-  ProductRecommendation,
   RecoveryStrategy,
   Sale,
-  BusinessSettings,
   EmpresaOut,
-  EmpresaSettingsRaw,
 } from "@/types";
 import { usuarioOutToAuthUser, clienteOutToCustomer, clientePaginatedToCustomer } from "@/lib/mappers";
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000/api";
+const API_URL = import.meta.env.VITE_API_URL;
 
 async function realFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const token = localStorage.getItem("auth_token");
@@ -30,7 +27,7 @@ async function realFetch<T>(path: string, options?: RequestInit): Promise<T> {
     },
   });
   if (!res.ok) {
-    // Interceptor 401: token expirado o inválido -> logout y redirect a /login
+    // Interceptor 401: token expirado o inválido
     if (res.status === 401) {
       localStorage.removeItem("auth_token");
       localStorage.removeItem("auth_user");
@@ -66,7 +63,6 @@ export const authApi = {
     const mapped = usuarioOutToAuthUser(data.user);
     localStorage.setItem("auth_token", data.token);
     localStorage.setItem("auth_user", JSON.stringify(mapped));
-    // Guardar raw para debug si hace falta
     localStorage.setItem("auth_user_raw", JSON.stringify(data.user));
     return mapped;
   },
@@ -115,7 +111,6 @@ export const authApi = {
 };
 
 // ---------------- Dashboard ----------------
-// Backend devuelve snake_case (acorde a app/schemas/dashboard.py). Frontend usa camelCase.
 function mapDashboardMetrics(raw: any): DashboardMetrics {
   return {
     totalSales: raw.total_sales ?? raw.totalSales ?? 0,
@@ -170,12 +165,10 @@ export const dashboardApi = {
 
 export const customersApi = {
   list: async (opts: { page?: number; pageSize?: number; search?: string; [k: string]: any }): Promise<Paginated<Customer>> => {
-    // Mapear pageSize -> page_size que espera backend pagination.py:10, ignorar filtros no soportados
     const params: Record<string, string> = {};
     if (opts.page) params.page = String(opts.page);
     if (opts.pageSize) params.page_size = String(opts.pageSize);
     if (opts.search) params.search = opts.search;
-    // Soportar doc_id/estado si vienen en opts, para RUC/DNI filtro futuro
     if (opts.doc_id) params.doc_id = String(opts.doc_id);
     if (opts.estado !== undefined) params.estado = String(opts.estado);
     const qs = new URLSearchParams(params).toString();
@@ -187,7 +180,6 @@ export const customersApi = {
     return raw ? clienteOutToCustomer(raw) : null;
   },
   create: async (input: Partial<Customer> & { doc_id?: string; cli_ndocumento?: string }): Promise<Customer> => {
-    // Adaptar EN -> ES, manejando RUC/DNI ambos (doc_id + cli_ndocumento requeridos)
     const nombre = `${input.firstName ?? ""} ${input.lastName ?? ""}`.trim() || (input as any).cli_nombre_razon_social || "—";
     const payload: any = {
       cli_nombre_razon_social: nombre,
@@ -256,19 +248,88 @@ export const atRiskApi = {
 export const productsApi = {
   list: async (opts: { page?: number; pageSize?: number; search?: string; [k: string]: any }): Promise<Paginated<Product>> => {
     const qs = new URLSearchParams(opts as any).toString();
-    return realFetch<Paginated<Product>>(`/productos?${qs}`);
+    const raw = await realFetch<any>(`/productos?${qs}`);
+    const mapped = {
+      ...raw,
+      items: (raw.items ?? []).map((p: any) => ({
+        id: p.prd_id,
+        businessId: p.emp_id,
+        sku: p.prd_sku ?? "",
+        name: p.prd_nombre,
+        description: p.prd_descripcion ?? null,
+        category: p.categoria_nombre ?? p.subcategoria_nombre ?? "—",
+        prd_id: p.prd_id,
+        prd_sku: p.prd_sku,
+        prd_nombre: p.prd_nombre,
+        prd_descripcion: p.prd_descripcion,
+        prd_codbarra: p.prd_codbarra,
+        subcat_id: p.subcat_id,
+        prd_marca_id: p.prd_marca_id,
+        categoria_nombre: p.categoria_nombre,
+        subcategoria_nombre: p.subcategoria_nombre,
+        marca_nombre: p.marca_nombre,
+        price: Number(p.precio_vigente ?? 0),
+        cost: p.costo_vigente != null ? Number(p.costo_vigente) : null,
+        stock: p.stk_cantidad != null ? Number(p.stk_cantidad) : null,
+        margin: p.precio_vigente && p.costo_vigente ? Math.round(((Number(p.precio_vigente) - Number(p.costo_vigente)) / Number(p.precio_vigente)) * 100) : null,
+        status: p.estado === 1 ? "active" : "inactive",
+        prd_precios: p.precio_vigente,
+        prd_precios_costo: p.costo_vigente,
+        stk_cantidad: p.stk_cantidad,
+        estado: p.estado,
+        raw: p,
+      })),
+    };
+    return mapped as Paginated<Product>;
   },
   create: async (input: any): Promise<Product> => {
-    return realFetch<Product>(`/productos`, { method: "POST", body: JSON.stringify(input) });
+    const payload: any = {
+      prd_sku: input.prd_sku ?? input.sku ?? null,
+      prd_nombre: input.prd_nombre ?? input.name ?? null,
+      prd_descripcion: input.prd_descripcion ?? input.description ?? null,
+      prd_codbarra: input.prd_codbarra ?? input.codbarra ?? null,
+      cat_id: input.cat_nombre ?? input.category ?? input.cat_id ?? null,
+      subcat_id: input.subcat_nombre ?? input.subcategory ?? input.subcat_id ?? null,
+      prd_marca_id: input.prd_marca_nombre ?? input.marca ?? input.prd_marca_id ?? null,
+      prd_precios: input.prd_precios ?? input.price ?? null,
+      prd_precios_costo: input.prd_precios_costo ?? input.cost ?? null,
+      stk_cantidad: input.stk_cantidad ?? input.stock ?? null,
+      prd_precios_undmedida: input.prd_precios_undmedida ?? "UND",
+    };
+    Object.keys(payload).forEach((k) => payload[k] === "" && (payload[k] = null));
+    return realFetch<Product>(`/productos`, { method: "POST", body: JSON.stringify(payload) });
   },
-  update: async (id: string, patch: Partial<Product>): Promise<Product | null> => {
-    return realFetch<Product | null>(`/productos/${id}`, { method: "PUT", body: JSON.stringify(patch) });
+  update: async (id: string, patch: Partial<Product> & any): Promise<Product | null> => {
+    const payload: any = {
+      prd_sku: patch.prd_sku ?? patch.sku ?? undefined,
+      prd_nombre: patch.prd_nombre ?? patch.name ?? undefined,
+      prd_descripcion: patch.prd_descripcion ?? patch.description ?? undefined,
+      prd_codbarra: patch.prd_codbarra ?? undefined,
+      cat_id: patch.cat_nombre ?? patch.category ?? patch.cat_id ?? undefined,
+      subcat_id: patch.subcat_nombre ?? patch.subcat_id ?? undefined,
+      prd_marca_id: patch.prd_marca_nombre ?? patch.prd_marca_id ?? undefined,
+      prd_precios: patch.prd_precios ?? patch.price ?? undefined,
+      prd_precios_costo: patch.prd_precios_costo ?? patch.cost ?? undefined,
+      stk_cantidad: patch.stk_cantidad ?? patch.stock ?? undefined,
+    };
+    Object.keys(payload).forEach((k) => payload[k] === undefined && delete payload[k]);
+    return realFetch<Product | null>(`/productos/${id}`, { method: "PUT", body: JSON.stringify(payload) });
   },
   deactivate: async (id: string): Promise<Product | null> => {
     return realFetch<Product | null>(`/productos/${id}`, { method: "DELETE" });
   },
   categories: async (): Promise<string[]> => {
     return realFetch<string[]>(`/productos/categorias`);
+  },
+  subcategorias: async (cat_id?: string): Promise<string[]> => {
+    const qs = cat_id ? `?cat_id=${cat_id}` : "";
+    const raw: any = await realFetch<any>(`/subcategorias${qs}`);
+    if (raw && Array.isArray(raw.items)) return raw.items.map((s: any) => s.subcat_nombre);
+    if (Array.isArray(raw)) return raw.map((s: any) => s.subcat_nombre ?? s);
+    return [];
+  },
+  marcas: async (): Promise<string[]> => {
+    return [];
   },
 };
 
@@ -335,7 +396,6 @@ export const catalogsApi = {
   subcategorias: async (cat_id?: string): Promise<any[]> => {
     const qs = cat_id ? `?cat_id=${cat_id}` : "";
     const raw = await realFetch<any>(`/subcategorias${qs}`);
-    // Backend devuelve Paginated {items, total} desde subcategorias.py:38, no array directo
     if (raw && Array.isArray(raw.items)) return raw.items;
     if (Array.isArray(raw)) return raw;
     return [];
@@ -344,7 +404,7 @@ export const catalogsApi = {
     realFetch(`/subcategorias`, { method: "POST", body: JSON.stringify(payload) }),
 };
 
-// ---------------- Usuarios / Roles / Perfil (centralizado, sin fetch manual) ----------------
+// ---------------- Usuarios / Roles / Perfil ----------------
 
 export const usuariosApi = {
   list: async (): Promise<any[]> => realFetch(`/usuarios`),
@@ -392,9 +452,8 @@ export const modelsApi = {
 };
 
 // ---------------- Configuración ----------------
-// EmpresaSettingsRaw movido a @/types como EmpresaOut (espejo de backend/app/schemas/empresa.py EmpresaOut)
-// Re-export para compatibilidad con imports legados desde services/api
-export type { EmpresaOut, EmpresaSettingsRaw } from "@/types";
+
+export type { EmpresaOut } from "@/types";
 
 export const settingsApi = {
   get: async (): Promise<EmpresaOut> => {
@@ -405,7 +464,6 @@ export const settingsApi = {
   },
 };
 
-// Empresas listado + modal (igual que usuarios) — usa tabla empresa con nombres BD emp_id/emp_ruc
 export const empresasApi = {
   list: async (search?: string): Promise<EmpresaOut[]> => {
     const qs = search ? `?search=${encodeURIComponent(search)}` : "";
@@ -417,5 +475,3 @@ export const empresasApi = {
   update: async (emp_id: string, patch: Partial<EmpresaOut>): Promise<EmpresaOut> =>
     realFetch<EmpresaOut>(`/empresas/${emp_id}`, { method: "PUT", body: JSON.stringify(patch) }),
 };
-
-export const IS_MOCK_MODE = false;

@@ -1,8 +1,3 @@
-// Tipos de dominio del sistema. Reflejan exactamente los campos descritos
-// en el brief técnico (secciones 7, 8, 9, 11, 13, 17, 18, 20, 24, 29).
-// Cuando el backend real (FastAPI) esté disponible, estos tipos deben
-// coincidir con los schemas Pydantic de app/schemas.
-
 export type UserRole = "admin" | "business_user";
 
 export interface AuthUser {
@@ -45,16 +40,15 @@ export interface Customer {
   status: "active" | "inactive";
   lastPurchaseAt: string | null;
   purchaseCount: number;
-  totalSpend: number; // moneda: siempre en unidades decimales, nunca float impreciso en backend real
+  totalSpend: number;
   avgTicket: number;
-  avgIntervalDays: number | null; // intervalo promedio individual entre compras
-  segment: CustomerSegment | null; // null -> UI muestra —
+  avgIntervalDays: number | null;
+  segment: CustomerSegment | null;
   customerValue: CustomerValue | null;
   rfm: RFMScore | null;
   churn: ChurnPrediction | null;
   activityStatus: CustomerActivityStatus | null;
   nextPurchase: NextPurchasePrediction | null;
-  // Campos crudos para RUC/DNI (doc_id + ndocumento) — se mantienen para crear/editar sin hardcode
   doc_id?: string | null;
   cli_ndocumento?: string | null;
 }
@@ -89,7 +83,7 @@ export interface NextPurchasePrediction {
   confidence: number;
 }
 
-// ---------- Productos (sección 8) ----------
+// ---------- Productos (sección 8) — tablas producto, producto_precios, producto_stock, producto_marca, categorias/subcategorias ----------
 export interface Product {
   id: string;
   businessId: string;
@@ -102,6 +96,22 @@ export interface Product {
   margin: number | null;
   stock: number | null;
   status: "active" | "inactive";
+  // Campos BD crudos (para edición — nombres exactos database_postgres.sql:279-355)
+  prd_id?: string;
+  prd_sku?: string | null;
+  prd_nombre?: string;
+  prd_descripcion?: string | null;
+  prd_codbarra?: string | null;
+  subcat_id?: string | null;
+  prd_marca_id?: string | null;
+  categoria_nombre?: string | null;
+  subcategoria_nombre?: string | null;
+  marca_nombre?: string | null;
+  prd_precios?: number | null;
+  prd_precios_costo?: number | null;
+  stk_cantidad?: number | null;
+  estado?: number;
+  raw?: any;
 }
 
 // ---------- Ventas (sección 9) ----------
@@ -293,8 +303,6 @@ export interface BusinessSettings {
   language: "es" | "en";
 }
 
-// ---------- Empresa (tenant) — espejo de backend/app/schemas/empresa.py EmpresaOut ----------
-// Tabla real: empresa (emp_id, emp_ruc, emp_razon_social, emp_nombre_comercial, emp_direccion, emp_lema, emp_email, emp_celular1/2, emp_telefono1/2, emp_nro_cuenta1/2, dep_id, prv_id, dis_id) — database_postgres.sql:148
 export interface EmpresaOut {
   emp_id: string;
   emp_ruc: string;
@@ -316,10 +324,8 @@ export interface EmpresaOut {
   created_at?: string | null;
   updated_at?: string | null;
 }
-// Alias legado para compatibilidad con código que importaba EmpresaSettingsRaw desde services/api
 export type EmpresaSettingsRaw = EmpresaOut;
 
-// ---------- Paginación genérica ----------
 export interface Paginated<T> {
   items: T[];
   page: number;
