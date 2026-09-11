@@ -5,26 +5,19 @@
 - JWT (HS256), expiración configurable (`ACCESS_TOKEN_EXPIRE_MINUTES`,
   8 horas por defecto).
 - Contraseñas hasheadas con bcrypt (`passlib`). Nunca se almacenan en
-  texto plano (verificado: la tabla `users` solo tiene `hashed_password`).
+  texto plano (verificado: la tabla `usuarios` solo tiene `hashed_password`).
 - El `SECRET_KEY` se lee de variable de entorno, nunca hardcodeado en el
   código fuente. `.env.example` usa un placeholder explícito
   (`CHANGE_ME_...`), nunca un secreto real.
 
 ## Autorización
-
-- Dos roles: `admin` y `business_user` (sección 5). Endpoints sensibles
   (`/api/settings`, `/api/models/*`) requieren `admin` explícitamente vía
   la dependencia `require_admin`.
-- Probado con tests de integración (`test_settings_endpoint_requires_admin_role`).
 
 ## Aislamiento multi-tenant
 
-- Cada repositorio recibe `business_id` como parámetro obligatorio y lo
-  aplica en cada consulta. Verificado con 6 tests de integración
-  dedicados en `tests/integration/test_multitenancy.py`, incluyendo el
-  caso más peligroso: un negocio que conoce el ID exacto de un recurso de
-  otro negocio (debe recibir 404, no 403, para no confirmar siquiera que
-  el recurso existe).
+- Cada repositorio recibe `emp_id` como parámetro obligatorio y lo
+  aplica en cada consulta.
 
 ## Validación de inputs
 

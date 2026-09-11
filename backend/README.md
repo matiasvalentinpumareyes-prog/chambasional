@@ -55,26 +55,14 @@ pip install -r requirements.txt
 
 cp .env.example .env
 # .env trae DATABASE_URL=postgresql+psycopg2://postgres:postgres@localhost:5432/db_regresape
-# En Docker, docker-compose.yml hace override a @postgres:5432/db_regresape
-
 # Crear la base de datos
 createdb db_regresape
 # o: psql -U postgres -c "CREATE DATABASE db_regresape;"
 
-# Aplicar migraciones (43 tablas — db_regresape)
+# Aplicar migraciones (44 tablas — db_regresape)
 alembic upgrade head
-# Verificar: psql "$DATABASE_URL" -c "\dt"  # debe mostrar 43 tablas
+# Verificar: psql "$DATABASE_URL" -c "\dt"  # debe mostrar 44 tablas
 
-# Cargar datos de demostración (1200 clientes, 37 productos, ~11,500 ventas)
-python seed_database.py
-# Esquema fuente: db/database_postgres.sql (44 tablas, ver backend/DATABASE.md)
-```
-
-Esto crea un usuario administrador de prueba:
-
-```
-email: admin@demo.com
-password: Demo12345
 ```
 
 ## 5. Ejecutar el servidor
@@ -113,11 +101,6 @@ train_churn_model(db, business.id)
 
 O vía API: `POST /api/models/churn/train` (requiere rol administrador).
 
-## 8. Job de recálculo diario/semanal
-
-```bash
-python -m app.jobs.daily_recalculation
-```
 
 **Decisión técnica:** se usa un script standalone invocable por cron en
 lugar de Celery + Redis completo, tal como el brief permite
