@@ -73,7 +73,7 @@ class ProductoRepository:
             like = f"%{search.lower()}%"
             stmt = stmt.where(func.lower(Producto.prd_nombre).like(like) | func.lower(Producto.prd_sku).like(like))
         if cat_id:
-            stmt = stmt.where(Producto.cat_id == cat_id)
+            stmt = stmt.where(Producto.subcat_id.in_(select(Subcategoria.subcat_id).where(Subcategoria.emp_id == emp_id, Subcategoria.cat_id == cat_id)))
         if subcat_id:
             stmt = stmt.where(Producto.subcat_id == subcat_id)
         if prd_marca_id:

@@ -3,23 +3,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { settingsApi } from "@/services/api";
 import { Button, Input, Label, Panel, Spinner } from "@/components/ui/Primitives";
+import type { EmpresaOut } from "@/types";
 
-type EmpresaForm = {
-  emp_id: string;
-  emp_ruc: string;
-  emp_razon_social: string;
-  emp_nombre_comercial: string;
-  emp_direccion?: string | null;
-  emp_lema?: string | null;
-  emp_email?: string | null;
-  emp_celular1?: string | null;
-  emp_celular2?: string | null;
-  emp_telefono1?: string | null;
-  emp_telefono2?: string | null;
-  emp_nro_cuenta1?: string | null;
-  emp_nro_cuenta2?: string | null;
-  estado: number;
-};
+type EmpresaForm = EmpresaOut;
 
 export function EmpresaPage() {
   const queryClient = useQueryClient();
@@ -34,23 +20,7 @@ export function EmpresaPage() {
 
   useEffect(() => {
     if (data) {
-      if ((data as any).emp_id) {
-        setForm(data as EmpresaForm);
-      } else if ((data as any).businessName) {
-        const legacy: any = data;
-        setForm({
-          emp_id: legacy.businessId ?? "",
-          emp_ruc: legacy.ruc ?? "",
-          emp_razon_social: legacy.businessName ?? "",
-          emp_nombre_comercial: legacy.businessName ?? "",
-          emp_direccion: null,
-          emp_lema: null,
-          emp_email: null,
-          estado: 1,
-        });
-      } else {
-        setForm(data as EmpresaForm);
-      }
+      setForm(data as EmpresaForm);
     }
   }, [data]);
 

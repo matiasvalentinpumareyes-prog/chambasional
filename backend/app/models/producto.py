@@ -61,15 +61,12 @@ class Producto(Base, TimestampMixin):
         UniqueConstraint("emp_id", "prd_id", name="uq_producto_emp_prd"),
         UniqueConstraint("emp_id", "prd_sku", name="uq_producto_emp_sku"),
         UniqueConstraint("emp_id", "prd_codbarra", name="uq_producto_emp_codbarra"),
-        ForeignKeyConstraint(["emp_id", "cat_id"], ["categorias.emp_id", "categorias.cat_id"], name="fk_producto_categoria"),
-        ForeignKeyConstraint(["emp_id", "cat_id", "subcat_id"], ["subcategorias.emp_id", "subcategorias.cat_id", "subcategorias.subcat_id"], name="fk_producto_subcategoria"),
+        ForeignKeyConstraint(["emp_id", "subcat_id"], ["subcategorias.emp_id", "subcategorias.subcat_id"], name="fk_producto_subcategoria"),
         ForeignKeyConstraint(["emp_id", "prd_marca_id"], ["producto_marca.emp_id", "producto_marca.prd_marca_id"], name="fk_producto_marca"),
-        CheckConstraint("subcat_id IS NULL OR cat_id IS NOT NULL", name="chk_producto_subcat_requiere_cat"),
     )
 
     prd_id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
     emp_id: Mapped[str] = mapped_column(ForeignKey("empresa.emp_id"), nullable=False)
-    cat_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     subcat_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     prd_marca_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     prd_sku: Mapped[str | None] = mapped_column(String(100), nullable=True)
@@ -81,9 +78,8 @@ class Producto(Base, TimestampMixin):
     updated_by: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     empresa: Mapped["app.models.empresa.Empresa"] = relationship()
-    categoria: Mapped["Categoria | None"] = relationship(foreign_keys="[Producto.emp_id, Producto.cat_id]", overlaps="empresa")
-    subcategoria: Mapped["app.models.subcategoria.Subcategoria | None"] = relationship(foreign_keys="[Producto.emp_id, Producto.cat_id, Producto.subcat_id]", overlaps="categoria,empresa")
-    marca: Mapped["ProductoMarca | None"] = relationship(foreign_keys="[Producto.emp_id, Producto.prd_marca_id]", overlaps="categoria,empresa,subcategoria")
+    subcategoria: Mapped["app.models.subcategoria.Subcategoria | None"] = relationship(foreign_keys="[Producto.emp_id, Producto.subcat_id]", overlaps="empresa")
+    marca: Mapped["ProductoMarca | None"] = relationship(foreign_keys="[Producto.emp_id, Producto.prd_marca_id]", overlaps="empresa,subcategoria")
 
 
 class ProductoPrecio(Base, TimestampMixin):

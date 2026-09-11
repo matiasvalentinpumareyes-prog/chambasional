@@ -13,26 +13,33 @@ const CURRENCY_LOCALE: Record<string, string> = {
  * string/decimal (NUMERIC), nunca float sin control de precisión (sección 72
  * del brief). Aquí solo se formatea para presentación.
  */
-export function formatMoney(amount: number, currency: string = "PEN"): string {
+export function formatMoney(amount: number | string | null | undefined, currency: string = "PEN"): string {
+  if (amount === null || amount === undefined || amount === "") return "—";
+  const n = typeof amount === "string" ? parseFloat(amount) : amount;
+  if (Number.isNaN(n) || !Number.isFinite(n)) return "—";
   const locale = CURRENCY_LOCALE[currency] ?? "es-PE";
   return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     maximumFractionDigits: 2,
-  }).format(amount);
+  }).format(n);
 }
 
 export function formatNumber(n: number): string {
   return new Intl.NumberFormat("es-PE").format(n);
 }
 
-export function formatPercent(fraction: number, digits = 0): string {
-  return `${(fraction * 100).toFixed(digits)}%`;
+export function formatPercent(fraction: number | string | null | undefined, digits = 0): string {
+  if (fraction === null || fraction === undefined || fraction === "") return "—";
+  const n = typeof fraction === "string" ? parseFloat(fraction) : fraction;
+  if (Number.isNaN(n) || !Number.isFinite(n)) return "—";
+  return `${(n * 100).toFixed(digits)}%`;
 }
 
-export function formatDate(iso: string | null): string {
+export function formatDate(iso: string | null | undefined): string {
   if (!iso) return "—";
   const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
   return d.toLocaleDateString("es-PE", { year: "numeric", month: "short", day: "2-digit" });
 }
 
@@ -46,11 +53,15 @@ export function daysAgo(iso: string | null, reference: Date = new Date()): numbe
   return daysBetween(reference, new Date(iso));
 }
 
-export const RISK_LABEL: Record<RiskLevel, string> = {
+export const RISK_LABEL: Record<string, string> = {
   low: "Bajo",
   medium: "Medio",
   high: "Alto",
   critical: "Crítico",
+  LOW: "Bajo",
+  MEDIUM: "Medio",
+  HIGH: "Alto",
+  CRITICAL: "Crítico",
 };
 
 export const RISK_COLOR: Record<RiskLevel, string> = {
@@ -60,7 +71,7 @@ export const RISK_COLOR: Record<RiskLevel, string> = {
   critical: "risk-critical",
 };
 
-export const SEGMENT_LABEL: Record<CustomerSegment, string> = {
+export const SEGMENT_LABEL: Record<string, string> = {
   vip: "VIP",
   loyal: "Fiel",
   frequent: "Frecuente",
@@ -73,18 +84,22 @@ export const SEGMENT_LABEL: Record<CustomerSegment, string> = {
   low_value: "Bajo valor",
 };
 
-export const ACTIVITY_LABEL: Record<CustomerActivityStatus, string> = {
+export const ACTIVITY_LABEL: Record<string, string> = {
   active: "Activo",
   at_risk: "En riesgo",
   dormant: "Dormido",
   lost: "Perdido",
 };
 
-export const CHANNEL_LABEL: Record<Channel, string> = {
+export const CHANNEL_LABEL: Record<string, string> = {
   email: "Email",
   whatsapp: "WhatsApp",
   sms: "SMS",
   internal: "Notificación interna",
+  EMAIL: "Email",
+  WHATSAPP: "WhatsApp",
+  SMS: "SMS",
+  PUSH: "Push",
 };
 
 export function classNames(...values: Array<string | false | null | undefined>): string {

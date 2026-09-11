@@ -293,6 +293,32 @@ export interface BusinessSettings {
   language: "es" | "en";
 }
 
+// ---------- Empresa (tenant) — espejo de backend/app/schemas/empresa.py EmpresaOut ----------
+// Tabla real: empresa (emp_id, emp_ruc, emp_razon_social, emp_nombre_comercial, emp_direccion, emp_lema, emp_email, emp_celular1/2, emp_telefono1/2, emp_nro_cuenta1/2, dep_id, prv_id, dis_id) — database_postgres.sql:148
+export interface EmpresaOut {
+  emp_id: string;
+  emp_ruc: string;
+  emp_razon_social: string;
+  emp_nombre_comercial: string;
+  emp_direccion?: string | null;
+  emp_lema?: string | null;
+  emp_email?: string | null;
+  emp_celular1?: string | null;
+  emp_celular2?: string | null;
+  emp_telefono1?: string | null;
+  emp_telefono2?: string | null;
+  emp_nro_cuenta1?: string | null;
+  emp_nro_cuenta2?: string | null;
+  dep_id?: string | null;
+  prv_id?: string | null;
+  dis_id?: string | null;
+  estado: number;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+// Alias legado para compatibilidad con código que importaba EmpresaSettingsRaw desde services/api
+export type EmpresaSettingsRaw = EmpresaOut;
+
 // ---------- Paginación genérica ----------
 export interface Paginated<T> {
   items: T[];

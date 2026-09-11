@@ -11,12 +11,14 @@ from app.db.session import get_db
 from app.models.producto import Categoria, Producto, ProductoPrecio
 from app.models.stock import ProductoStock
 from app.models.empresa import Usuario
+from app.models.subcategoria import Subcategoria
 from app.repositories.producto_repo import ProductoRepository
 from app.repositories.stock_repo import StockRepository
 from app.schemas.producto import ProductoCreate, ProductoOut, ProductoUpdate
 from app.schemas.common import Paginated
 
-router = APIRouter(prefix="/products", tags=["products"])
+router = APIRouter(prefix="/productos", tags=["productos"])
+router_legacy = APIRouter(prefix="/products", tags=["products"])
 
 
 def _get_or_create_categoria(db: Session, emp_id: str, cat_nombre: str) -> Categoria:
@@ -25,19 +27,19 @@ def _get_or_create_categoria(db: Session, emp_id: str, cat_nombre: str) -> Categ
 
 
 def _to_out(db: Session, producto: Producto) -> ProductoOut:
-    # Resolver categoria/subcategoria/marca nombres
+    # Resolver categoria/subcategoria/marca nombres — DB real: producto solo tiene subcat_id (no cat_id directo), cat via subcategoria
     cat_nombre = ""
     subcat_nombre = None
     marca_nombre = None
-    if producto.cat_id:
-        cat = db.scalar(select(Categoria).where(Categoria.emp_id == producto.emp_id, Categoria.cat_id == producto.cat_id))
-        if cat:
-            cat_nombre = cat.cat_nombre
     if producto.subcat_id:
         from app.models.subcategoria import Subcategoria
         sub = db.scalar(select(Subcategoria).where(Subcategoria.emp_id == producto.emp_id, Subcategoria.subcat_id == producto.subcat_id))
         if sub:
             subcat_nombre = sub.subcat_nombre
+            # cat_nombre via subcategoria.cat_id
+            cat = db.scalar(select(Categoria).where(Categoria.emp_id == sub.emp_id, Categoria.cat_id == sub.cat_id))
+            if cat:
+                cat_nombre = cat.cat_nombre
     if producto.prd_marca_id:
         from app.models.producto import ProductoMarca
         marca = db.scalar(select(ProductoMarca).where(ProductoMarca.emp_id == producto.emp_id, ProductoMarca.prd_marca_id == producto.prd_marca_id))
@@ -58,7 +60,7 @@ def _to_out(db: Session, producto: Producto) -> ProductoOut:
 
     return ProductoOut(
         emp_id=str(producto.emp_id) if producto.emp_id else None,
-        cat_id=str(producto.cat_id) if producto.cat_id else None,
+        cat_id=None,
         subcat_id=str(producto.subcat_id) if producto.subcat_id else None,
         prd_marca_id=str(producto.prd_marca_id) if producto.prd_marca_id else None,
         prd_sku=producto.prd_sku,
@@ -79,6 +81,7 @@ def _to_out(db: Session, producto: Producto) -> ProductoOut:
 
 
 @router.get("", response_model=Paginated[ProductoOut])
+@router_legacy.get("", response_model=Paginated[ProductoOut], include_in_schema=False)
 def list_productos(
     page_params: PageParams = Depends(),
     search: str | None = None,
@@ -94,12 +97,14 @@ def list_productos(
 
 
 @router.get("/categorias", response_model=list[str])
+@router_legacy.get("/categorias", response_model=list[str], include_in_schema=False)
 def list_categorias(db: Session = Depends(get_db), usuario: Usuario = Depends(get_current_user)):
     categorias = db.scalars(select(Categoria).where(Categoria.emp_id == usuario.emp_id))
     return sorted({c.cat_nombre for c in categorias})
 
 
 @router.get("/{prd_id}", response_model=ProductoOut)
+@router_legacy.get("/{prd_id}", response_model=ProductoOut, include_in_schema=False)
 def get_producto(prd_id: str, db: Session = Depends(get_db), usuario: Usuario = Depends(get_current_user)):
     repo = ProductoRepository(db)
     producto = repo.get(usuario.emp_id, prd_id)
@@ -109,6 +114,7 @@ def get_producto(prd_id: str, db: Session = Depends(get_db), usuario: Usuario = 
 
 
 @router.post("", response_model=ProductoOut, status_code=201)
+@router_legacy.post("", response_model=ProductoOut, status_code=201, include_in_schema=False)
 def create_producto(payload: ProductoCreate, db: Session = Depends(get_db), usuario: Usuario = Depends(get_current_user)):
     repo = ProductoRepository(db)
     if payload.prd_sku and repo.get_by_sku(usuario.emp_id, payload.prd_sku):
@@ -136,7 +142,6 @@ def create_producto(payload: ProductoCreate, db: Session = Depends(get_db), usua
 
     producto = Producto(
         emp_id=usuario.emp_id,
-        cat_id=cat_id,
         subcat_id=subcat_id,
         prd_marca_id=payload.prd_marca_id,
         prd_sku=payload.prd_sku,
@@ -174,6 +179,7 @@ def create_producto(payload: ProductoCreate, db: Session = Depends(get_db), usua
 
 
 @router.put("/{prd_id}", response_model=ProductoOut)
+@router_legacy.put("/{prd_id}", response_model=ProductoOut, include_in_schema=False)
 def update_producto(prd_id: str, payload: ProductoUpdate, db: Session = Depends(get_db), usuario: Usuario = Depends(get_current_user)):
     repo = ProductoRepository(db)
     producto = repo.get(usuario.emp_id, prd_id)
@@ -181,25 +187,31 @@ def update_producto(prd_id: str, payload: ProductoUpdate, db: Session = Depends(
         raise NotFoundError("PRODUCTO_NOT_FOUND", "Producto no encontrado.")
 
     patch = payload.model_dump(exclude_unset=True)
+    # DB real producto no tiene cat_id; cat solo sirve para resolver subcat
+    cat_for_sub = patch.get("cat_id") or (producto.subcat_id and db.scalar(select(Subcategoria.cat_id).where(Subcategoria.emp_id==usuario.emp_id, Subcategoria.subcat_id==producto.subcat_id)))
     # Si prd_sku cambia, validar único
     if "prd_sku" in patch and patch["prd_sku"]:
         existing = repo.get_by_sku(usuario.emp_id, patch["prd_sku"])
         if existing and existing.prd_id != prd_id:
             raise ConflictError("SKU_ALREADY_EXISTS", "SKU ya existe en otro producto.")
 
-    # Manejar categoria/subcategoria nombre
-    if "cat_id" in patch and patch["cat_id"] and len(patch["cat_id"]) < 36:
-        cat = _get_or_create_categoria(db, usuario.emp_id, patch["cat_id"])
-        patch["cat_id"] = cat.cat_id
+    # Manejar categoria/subcategoria nombre — cat solo para crear subcat
+    if "cat_id" in patch:
+        # cat_id no se guarda en producto, solo se usa para crear subcat si hace falta
+        # si cat es nombre (<36), crear categoria
+        if patch["cat_id"] and len(str(patch["cat_id"])) < 36:
+            cat = _get_or_create_categoria(db, usuario.emp_id, patch["cat_id"])
+            patch["cat_id"] = cat.cat_id
+        # no persistir cat_id en producto (DB no tiene columna)
+        cat_for_sub = patch.pop("cat_id")
     if "subcat_id" in patch and patch["subcat_id"]:
-        if "cat_id" not in patch and not producto.cat_id:
-            raise ConflictError("SUBCAT_REQUIERE_CAT", "subcat_id requiere cat_id")
+        if not cat_for_sub:
+            raise ConflictError("SUBCAT_REQUIERE_CAT", "subcat_id requiere cat_id (DB: producto.subcat_id FK a subcategorias)")
         # Si subcat es nombre, crear
-        if len(patch["subcat_id"]) < 36:
-            check_cat = patch.get("cat_id", producto.cat_id)
+        if len(str(patch["subcat_id"])) < 36:
             from app.repositories.producto_repo import ProductoRepository as PR
             repo_tmp = PR(db)
-            sub = repo_tmp.get_or_create_subcategoria(usuario.emp_id, check_cat, patch["subcat_id"])
+            sub = repo_tmp.get_or_create_subcategoria(usuario.emp_id, cat_for_sub, patch["subcat_id"])
             patch["subcat_id"] = sub.subcat_id
 
     updated = repo.update(producto, patch)
@@ -207,6 +219,7 @@ def update_producto(prd_id: str, payload: ProductoUpdate, db: Session = Depends(
 
 
 @router.delete("/{prd_id}", response_model=ProductoOut)
+@router_legacy.delete("/{prd_id}", response_model=ProductoOut, include_in_schema=False)
 def deactivate_producto(prd_id: str, db: Session = Depends(get_db), usuario: Usuario = Depends(get_current_user)):
     repo = ProductoRepository(db)
     producto = repo.get(usuario.emp_id, prd_id)

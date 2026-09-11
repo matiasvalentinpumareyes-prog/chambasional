@@ -12,6 +12,8 @@ import type {
   RecoveryStrategy,
   Sale,
   BusinessSettings,
+  EmpresaOut,
+  EmpresaSettingsRaw,
 } from "@/types";
 import { usuarioOutToAuthUser, clienteOutToCustomer, clientePaginatedToCustomer } from "@/lib/mappers";
 
@@ -44,15 +46,11 @@ async function realFetch<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 // ---------------- Auth ----------------
-// mapper importado desde @/lib/mappers para mantener emp_id 0471cf4c... y RUC/DNI handling centralizado
-
 export const authApi = {
   login: async (identifier: string, _password: string): Promise<AuthUser> => {
     const id = identifier.trim();
     const isEmail = id.includes("@");
     const body: any = { password: _password };
-    // Envía en ambos campos + alias identifier para compatibilidad backend
-    // Backend hace OR sobre usu_email/usu_usuario/identifier
     if (isEmail) {
       body.usu_email = id;
       body.usu_usuario = id;
@@ -217,14 +215,29 @@ export const customersApi = {
     const raw = await realFetch<any>(`/clientes/${id}`, { method: "DELETE" });
     return raw ? clienteOutToCustomer(raw) : null;
   },
-  sales: async (id: string): Promise<Sale[]> => {
-    return realFetch<Sale[]>(`/ventas?cli_id=${id}`);
+  sales: async (cli_id: string): Promise<any[]> => {
+    const raw: any = await realFetch<any>(`/ventas?cli_id=${cli_id}&page=1&page_size=50`);
+    const list: any[] = Array.isArray(raw) ? raw : (raw?.items ?? []);
+    return list;
   },
-  recommendations: async (id: string): Promise<ProductRecommendation[]> => {
-    return realFetch<ProductRecommendation[]>(`/clientes/${id}/recommendations`);
+  recommendations: async (cli_id: string): Promise<any[]> => {
+    try {
+      const raw: any = await realFetch<any>(`/clientes/${cli_id}/recommendations`);
+      const list: any[] = Array.isArray(raw) ? raw : (raw?.items ?? []);
+      return Array.isArray(list) ? list : [];
+    } catch {
+      return [];
+    }
   },
-  strategy: async (id: string): Promise<RecoveryStrategy | null> => {
-    return realFetch<RecoveryStrategy | null>(`/clientes/${id}/strategy`);
+  strategy: async (cli_id: string): Promise<any | null> => {
+    try {
+      const r: any = await realFetch<any>(`/clientes/${cli_id}/strategy`);
+      if (!r || (typeof r === "object" && Object.keys(r).length === 0)) return null;
+      if (r?.success === false) return null;
+      return r;
+    } catch {
+      return null;
+    }
   },
 };
 
@@ -379,34 +392,16 @@ export const modelsApi = {
 };
 
 // ---------------- Configuración ----------------
-export type EmpresaSettingsRaw = {
-  emp_id: string;
-  emp_ruc: string;
-  emp_razon_social: string;
-  emp_nombre_comercial: string;
-  emp_direccion?: string | null;
-  emp_lema?: string | null;
-  emp_email?: string | null;
-  emp_celular1?: string | null;
-  emp_celular2?: string | null;
-  emp_telefono1?: string | null;
-  emp_telefono2?: string | null;
-  emp_nro_cuenta1?: string | null;
-  emp_nro_cuenta2?: string | null;
-  dep_id?: string | null;
-  prv_id?: string | null;
-  dis_id?: string | null;
-  estado: number;
-  created_at?: string | null;
-  updated_at?: string | null;
-};
+// EmpresaSettingsRaw movido a @/types como EmpresaOut (espejo de backend/app/schemas/empresa.py EmpresaOut)
+// Re-export para compatibilidad con imports legados desde services/api
+export type { EmpresaOut, EmpresaSettingsRaw } from "@/types";
 
 export const settingsApi = {
-  get: async (): Promise<EmpresaSettingsRaw & Partial<BusinessSettings>> => {
-    return realFetch<EmpresaSettingsRaw & Partial<BusinessSettings>>(`/settings`);
+  get: async (): Promise<EmpresaOut> => {
+    return realFetch<EmpresaOut>(`/settings`);
   },
-  update: async (patch: any): Promise<EmpresaSettingsRaw & Partial<BusinessSettings>> => {
-    return realFetch<EmpresaSettingsRaw & Partial<BusinessSettings>>(`/settings`, { method: "PUT", body: JSON.stringify(patch) });
+  update: async (patch: any): Promise<EmpresaOut> => {
+    return realFetch<EmpresaOut>(`/settings`, { method: "PUT", body: JSON.stringify(patch) });
   },
 };
 

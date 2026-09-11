@@ -67,9 +67,8 @@ for _mod_name, _prefix in [
         _mod = __import__(f"app.api.{_mod_name}", fromlist=["router"])
         _router = getattr(_mod, "router", None)
         if _router is not None:
-            app.include_router(_router, prefix=_prefix)
-        # también legacy ventas
-        if _mod_name == "ventas" and hasattr(_mod, "router_legacy"):
+            app.include_router(_router, prefix=_prefix)        # legacy alias si existe (clientes /customers, productos /products, ventas /sales)
+        if hasattr(_mod, "router_legacy"):
             app.include_router(_mod.router_legacy, prefix=_prefix)
     except Exception as e:
         logger.warning(f"Router {_mod_name} no cargado (no bloquea login): {e}")

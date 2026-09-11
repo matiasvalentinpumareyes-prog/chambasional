@@ -4,36 +4,49 @@ from enum import Enum
 from pydantic import BaseModel, Field
 
 
-class CanalCodigo(str, Enum):
-    """Canales dinámicos vía canales_marketing.can_codigo"""
-    @classmethod
-    def _missing_(cls, value):
-        if isinstance(value, str):
-            obj = str.__new__(cls, value.upper())
-            obj._name_ = value.upper()
-            obj._value_ = value.upper()
-            return obj
-        return None
+# Canales NO hardcodeados — valores dinámicos de canales_marketing.can_codigo (BD)
+# Tabla real: canales_marketing (can_id, can_codigo, can_nombre, requiere_consentimiento) — database_postgres.sql:74
+# Cualquier nuevo canal (ej. TELEGRAM, INSTAGRAM) insertado en BD se acepta automáticamente sin tocar código.
+# Por eso no es Enum estático; es str validado contra BD en runtime (ver catalogsApi.canales() en frontend).
+CanalCodigo = str  # type: ignore
+# Nota: StrategyOut.recommended_action: CanalCodigo | str = str dinámico de BD
 
 
 class RecommendationMethod(str, Enum):
+    frequency = "frequency"
+    collaborative_filtering = "collaborative_filtering"
+    cold_start = "cold_start"
+    rules = "rules"
+
     @classmethod
     def _missing_(cls, value):
         if isinstance(value, str):
-            obj = str.__new__(cls, value)
-            obj._name_ = value
-            obj._value_ = value
+            v = value.lower()
+            for m in cls:
+                if m.value == v:
+                    return m
+            obj = str.__new__(cls, v)
+            obj._name_ = v
+            obj._value_ = v
             return obj
         return None
 
 
 class CustomerValue(str, Enum):
+    low = "low"
+    medium = "medium"
+    high = "high"
+
     @classmethod
     def _missing_(cls, value):
         if isinstance(value, str):
-            obj = str.__new__(cls, value)
-            obj._name_ = value
-            obj._value_ = value
+            v = value.lower()
+            for m in cls:
+                if m.value == v:
+                    return m
+            obj = str.__new__(cls, v)
+            obj._name_ = v
+            obj._value_ = v
             return obj
         return None
 
