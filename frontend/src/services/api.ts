@@ -405,4 +405,17 @@ export const settingsApi = {
   },
 };
 
+// Empresas listado + modal (igual que usuarios) — usa tabla empresa con nombres BD emp_id/emp_ruc
+export const empresasApi = {
+  list: async (search?: string): Promise<EmpresaOut[]> => {
+    const qs = search ? `?search=${encodeURIComponent(search)}` : "";
+    return realFetch<EmpresaOut[]>(`/empresas${qs}`);
+  },
+  get: async (emp_id: string): Promise<EmpresaOut> => realFetch<EmpresaOut>(`/empresas/${emp_id}`),
+  create: async (payload: { emp_ruc: string; emp_razon_social: string; emp_nombre_comercial: string; emp_email?: string; emp_direccion?: string; emp_lema?: string }): Promise<EmpresaOut> =>
+    realFetch<EmpresaOut>(`/empresas`, { method: "POST", body: JSON.stringify(payload) }),
+  update: async (emp_id: string, patch: Partial<EmpresaOut>): Promise<EmpresaOut> =>
+    realFetch<EmpresaOut>(`/empresas/${emp_id}`, { method: "PUT", body: JSON.stringify(patch) }),
+};
+
 export const IS_MOCK_MODE = false;

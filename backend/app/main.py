@@ -49,6 +49,13 @@ app.include_router(roles_router, prefix=settings.API_V1_PREFIX)
 # Clientes: nuevo /clientes + legacy /customers (via clientes.router_legacy)
 app.include_router(clientes.router, prefix=settings.API_V1_PREFIX)
 app.include_router(clientes.router_legacy, prefix=settings.API_V1_PREFIX)
+# Empresas listado + modal (igual que usuarios) — usa tabla empresa con nombres BD emp_id/emp_ruc
+try:
+    from app.api.empresas import router as empresas_router
+    app.include_router(empresas_router, prefix=settings.API_V1_PREFIX)
+except Exception as e:
+    logger.warning(f"Router empresas no cargado: {e}")
+
 # Routers no críticos para login — se intentan cargar pero no bloquean si fallan
 for _mod_name, _prefix in [
     ("productos", settings.API_V1_PREFIX),
